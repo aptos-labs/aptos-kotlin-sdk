@@ -6,7 +6,6 @@ import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 
 class ChainIdTest {
-
     @Test
     fun `MAINNET constant`() {
         ChainId.MAINNET.value shouldBe 1u.toUByte()

@@ -8,6 +8,8 @@ junit = "5.11.4"
 mockk = "1.13.14"
 kotest = "5.9.1"
 detekt = "1.23.7"
+spotless = "7.0.2"
+kover = "0.9.1"
 
 [libraries]
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
@@ -34,3 +36,5 @@ kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }

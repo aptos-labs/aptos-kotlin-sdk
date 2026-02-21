@@ -4,17 +4,13 @@ import com.aptos.core.bcs.BcsSerializable
 import com.aptos.core.bcs.BcsSerializer
 import com.aptos.core.error.CryptoException
 import com.aptos.core.types.HexString
-import org.bouncycastle.asn1.ASN1Integer
-import org.bouncycastle.asn1.DERSequence
-import org.bouncycastle.asn1.ASN1Sequence
+import org.bouncycastle.crypto.digests.SHA256Digest
 import org.bouncycastle.crypto.ec.CustomNamedCurves
 import org.bouncycastle.crypto.params.ECDomainParameters
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters
 import org.bouncycastle.crypto.params.ECPublicKeyParameters
 import org.bouncycastle.crypto.signers.ECDSASigner
 import org.bouncycastle.crypto.signers.HMacDSAKCalculator
-import org.bouncycastle.crypto.digests.SHA256Digest
-import org.bouncycastle.math.ec.ECPoint
 import org.bouncycastle.math.ec.FixedPointCombMultiplier
 import java.math.BigInteger
 import java.security.SecureRandom
@@ -27,16 +23,19 @@ import java.security.SecureRandom
  * Verification rejects high-S signatures.
  */
 object Secp256k1 {
-
     const val PRIVATE_KEY_LENGTH = 32
     const val PUBLIC_KEY_COMPRESSED_LENGTH = 33
     const val PUBLIC_KEY_UNCOMPRESSED_LENGTH = 65
     const val SIGNATURE_LENGTH = 64
 
     private val curveParams = CustomNamedCurves.getByName("secp256k1")
-    private val domainParams = ECDomainParameters(
-        curveParams.curve, curveParams.g, curveParams.n, curveParams.h
-    )
+    private val domainParams =
+        ECDomainParameters(
+            curveParams.curve,
+            curveParams.g,
+            curveParams.n,
+            curveParams.h,
+        )
     private val halfN = curveParams.n.shiftRight(1)
 
     /**
@@ -59,11 +58,11 @@ object Secp256k1 {
         }
 
         /**
-         * Signs the [message] with SHA-256 hashing and RFC 6979 deterministic nonce.
+         * Signs the [message] with SHA3-256 hashing and RFC 6979 deterministic nonce.
          * The resulting signature has low-S normalization applied.
          */
         fun sign(message: ByteArray): Signature {
-            val hash = Hashing.sha256(message)
+            val hash = Hashing.sha3256(message)
             val d = BigInteger(1, data)
             val signer = ECDSASigner(HMacDSAKCalculator(SHA256Digest()))
             signer.init(true, ECPrivateKeyParameters(d, domainParams))
@@ -86,6 +85,7 @@ object Secp256k1 {
         }
 
         override fun hashCode(): Int = data.contentHashCode()
+
         override fun toString(): String = "Secp256k1PrivateKey(***)"
 
         companion object {
@@ -114,7 +114,7 @@ object Secp256k1 {
     data class PublicKey(val data: ByteArray) : BcsSerializable {
         init {
             require(
-                data.size == PUBLIC_KEY_UNCOMPRESSED_LENGTH || data.size == PUBLIC_KEY_COMPRESSED_LENGTH
+                data.size == PUBLIC_KEY_UNCOMPRESSED_LENGTH || data.size == PUBLIC_KEY_COMPRESSED_LENGTH,
             ) {
                 "Secp256k1 public key must be $PUBLIC_KEY_COMPRESSED_LENGTH or " +
                     "$PUBLIC_KEY_UNCOMPRESSED_LENGTH bytes, got ${data.size}"
@@ -141,13 +141,13 @@ object Secp256k1 {
 
         /**
          * Verifies that [signature] is valid for the given [message].
-         * Rejects high-S signatures. The message is SHA-256 hashed internally.
+         * Rejects high-S signatures. The message is SHA3-256 hashed internally.
          *
          * @throws CryptoException if verification encounters an error
          */
         fun verify(message: ByteArray, signature: Signature): Boolean {
             return try {
-                val hash = Hashing.sha256(message)
+                val hash = Hashing.sha3256(message)
                 val (r, s) = decodeRS(signature.data)
                 // Reject high-S
                 if (s > halfN) return false
@@ -169,6 +169,7 @@ object Secp256k1 {
         }
 
         override fun hashCode(): Int = data.contentHashCode()
+
         override fun toString(): String = "Secp256k1PublicKey(${toHex()})"
 
         companion object {
@@ -202,6 +203,7 @@ object Secp256k1 {
         }
 
         override fun hashCode(): Int = data.contentHashCode()
+
         override fun toString(): String = "Secp256k1Signature(${toHex()})"
 
         companion object {

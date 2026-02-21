@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test
 import java.math.BigInteger
 
 class BcsSerializerTest {
-
     @Test
     fun `serialize bool true`() {
         val s = BcsSerializer()

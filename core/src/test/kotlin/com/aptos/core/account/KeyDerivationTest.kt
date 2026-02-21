@@ -3,14 +3,13 @@ package com.aptos.core.account
 import com.aptos.core.error.MnemonicException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
 import org.junit.jupiter.api.Test
 
 class KeyDerivationTest {
-
-    private val testMnemonic = Mnemonic.fromPhrase(
-        "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
-    )
+    private val testMnemonic =
+        Mnemonic.fromPhrase(
+            "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
+        )
 
     // --- SLIP-0010 (Ed25519) ---
 

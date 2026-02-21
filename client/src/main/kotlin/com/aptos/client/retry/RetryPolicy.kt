@@ -12,7 +12,6 @@ import kotlin.random.Random
  * Retryable HTTP status codes: 429 (Too Many Requests), 500, 502, 503, 504.
  */
 object RetryPolicy {
-
     private val RETRYABLE_STATUS_CODES = setOf(429, 500, 502, 503, 504)
 
     /** Returns `true` if the given HTTP [statusCode] is considered retryable. */
@@ -23,10 +22,7 @@ object RetryPolicy {
      *
      * Uses exponential backoff with random jitter between retries.
      */
-    suspend fun <T> withRetry(
-        config: RetryConfig,
-        block: suspend () -> T,
-    ): T {
+    suspend fun <T> withRetry(config: RetryConfig, block: suspend () -> T): T {
         var lastException: Exception? = null
         var currentDelay = config.initialDelayMs
 
@@ -39,10 +35,11 @@ object RetryPolicy {
                     lastException = e
                     val jitter = Random.nextLong(0, currentDelay / 2 + 1)
                     delay(currentDelay + jitter)
-                    currentDelay = min(
-                        (currentDelay * config.backoffMultiplier).toLong(),
-                        config.maxDelayMs,
-                    )
+                    currentDelay =
+                        min(
+                            (currentDelay * config.backoffMultiplier).toLong(),
+                            config.maxDelayMs,
+                        )
                 } else {
                     throw e
                 }

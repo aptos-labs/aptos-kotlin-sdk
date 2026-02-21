@@ -11,7 +11,6 @@ import javax.crypto.spec.SecretKeySpec
  * BIP-32 key derivation for Secp256k1.
  */
 object Bip32 {
-
     private const val BITCOIN_SEED = "Bitcoin seed"
     private val curveParams = CustomNamedCurves.getByName("secp256k1")
 
@@ -22,11 +21,12 @@ object Bip32 {
         var currentChainCode = chainCode
 
         for (component in path.components) {
-            val derived = if (component.hardened) {
-                deriveHardenedChild(currentKey, currentChainCode, component.toInt())
-            } else {
-                deriveNormalChild(currentKey, currentChainCode, component.index.toInt())
-            }
+            val derived =
+                if (component.hardened) {
+                    deriveHardenedChild(currentKey, currentChainCode, component.toInt())
+                } else {
+                    deriveNormalChild(currentKey, currentChainCode, component.index.toInt())
+                }
             currentKey = derived.first
             currentChainCode = derived.second
         }
@@ -45,11 +45,7 @@ object Bip32 {
         return key to chainCode
     }
 
-    private fun deriveHardenedChild(
-        key: ByteArray,
-        chainCode: ByteArray,
-        index: Int,
-    ): Pair<ByteArray, ByteArray> {
+    private fun deriveHardenedChild(key: ByteArray, chainCode: ByteArray, index: Int): Pair<ByteArray, ByteArray> {
         val data = ByteArray(37)
         data[0] = 0x00
         System.arraycopy(key, 0, data, 1, 32)
@@ -61,11 +57,7 @@ object Bip32 {
         return deriveFromHmac(key, chainCode, data)
     }
 
-    private fun deriveNormalChild(
-        key: ByteArray,
-        chainCode: ByteArray,
-        index: Int,
-    ): Pair<ByteArray, ByteArray> {
+    private fun deriveNormalChild(key: ByteArray, chainCode: ByteArray, index: Int): Pair<ByteArray, ByteArray> {
         val pubKey = publicKeyFromPrivate(key)
         val data = ByteArray(37)
         System.arraycopy(pubKey, 0, data, 0, 33)
@@ -89,13 +81,14 @@ object Bip32 {
         if (il >= curveParams.n || childKey == BigInteger.ZERO) {
             throw MnemonicException("Invalid child key derived")
         }
-        val childKeyBytes = childKey.toByteArray().let { bytes ->
-            when {
-                bytes.size > 32 -> bytes.copyOfRange(bytes.size - 32, bytes.size)
-                bytes.size < 32 -> ByteArray(32 - bytes.size) + bytes
-                else -> bytes
+        val childKeyBytes =
+            childKey.toByteArray().let { bytes ->
+                when {
+                    bytes.size > 32 -> bytes.copyOfRange(bytes.size - 32, bytes.size)
+                    bytes.size < 32 -> ByteArray(32 - bytes.size) + bytes
+                    else -> bytes
+                }
             }
-        }
         return childKeyBytes to hmac.copyOfRange(32, 64)
     }
 

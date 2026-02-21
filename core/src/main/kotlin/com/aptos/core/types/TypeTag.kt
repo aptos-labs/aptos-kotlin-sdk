@@ -18,31 +18,37 @@ import com.aptos.core.error.TypeTagParseException
 sealed class TypeTag : BcsSerializable {
     data object Bool : TypeTag() {
         override fun serialize(serializer: BcsSerializer) = serializer.serializeVariantIndex(0u)
+
         override fun toString() = "bool"
     }
 
     data object U8 : TypeTag() {
         override fun serialize(serializer: BcsSerializer) = serializer.serializeVariantIndex(1u)
+
         override fun toString() = "u8"
     }
 
     data object U64 : TypeTag() {
         override fun serialize(serializer: BcsSerializer) = serializer.serializeVariantIndex(2u)
+
         override fun toString() = "u64"
     }
 
     data object U128 : TypeTag() {
         override fun serialize(serializer: BcsSerializer) = serializer.serializeVariantIndex(3u)
+
         override fun toString() = "u128"
     }
 
     data object Address : TypeTag() {
         override fun serialize(serializer: BcsSerializer) = serializer.serializeVariantIndex(4u)
+
         override fun toString() = "address"
     }
 
     data object Signer : TypeTag() {
         override fun serialize(serializer: BcsSerializer) = serializer.serializeVariantIndex(5u)
+
         override fun toString() = "signer"
     }
 
@@ -66,16 +72,19 @@ sealed class TypeTag : BcsSerializable {
 
     data object U16 : TypeTag() {
         override fun serialize(serializer: BcsSerializer) = serializer.serializeVariantIndex(8u)
+
         override fun toString() = "u16"
     }
 
     data object U32 : TypeTag() {
         override fun serialize(serializer: BcsSerializer) = serializer.serializeVariantIndex(9u)
+
         override fun toString() = "u32"
     }
 
     data object U256 : TypeTag() {
         override fun serialize(serializer: BcsSerializer) = serializer.serializeVariantIndex(10u)
+
         override fun toString() = "u256"
     }
 
@@ -96,8 +105,8 @@ sealed class TypeTag : BcsSerializable {
 
         /** Deserializes a [TypeTag] from BCS (reads variant index, then variant-specific data). */
         @JvmStatic
-        fun fromBcs(deserializer: BcsDeserializer): TypeTag {
-            return when (val index = deserializer.deserializeVariantIndex()) {
+        fun fromBcs(deserializer: BcsDeserializer): TypeTag =
+            when (val index = deserializer.deserializeVariantIndex()) {
                 0u -> Bool
                 1u -> U8
                 2u -> U64
@@ -111,7 +120,6 @@ sealed class TypeTag : BcsSerializable {
                 10u -> U256
                 else -> throw TypeTagParseException("Unknown TypeTag variant index: $index")
             }
-        }
     }
 }
 
@@ -128,7 +136,9 @@ internal class TypeTagParser(private val input: String) {
         val tag = parseTypeTagInner()
         skipWhitespace()
         if (pos != input.length) {
-            throw TypeTagParseException("Unexpected characters after type tag at position $pos: '${input.substring(pos)}'")
+            throw TypeTagParseException(
+                "Unexpected characters after type tag at position $pos: '${input.substring(pos)}'",
+            )
         }
         return tag
     }
@@ -184,32 +194,34 @@ internal class TypeTagParser(private val input: String) {
         expect(':')
         val name = parseIdentifier()
 
-        val typeArgs = if (pos < input.length && input[pos] == '<') {
-            pos++ // consume '<'
-            val args = mutableListOf<TypeTag>()
-            skipWhitespace()
-            if (pos < input.length && input[pos] != '>') {
-                args.add(parseTypeTagInner())
+        val typeArgs =
+            if (pos < input.length && input[pos] == '<') {
+                pos++ // consume '<'
+                val args = mutableListOf<TypeTag>()
                 skipWhitespace()
-                while (pos < input.length && input[pos] == ',') {
-                    pos++ // consume ','
-                    skipWhitespace()
+                if (pos < input.length && input[pos] != '>') {
                     args.add(parseTypeTagInner())
                     skipWhitespace()
+                    while (pos < input.length && input[pos] == ',') {
+                        pos++ // consume ','
+                        skipWhitespace()
+                        args.add(parseTypeTagInner())
+                        skipWhitespace()
+                    }
                 }
+                skipWhitespace()
+                expect('>')
+                args
+            } else {
+                emptyList()
             }
-            skipWhitespace()
-            expect('>')
-            args
-        } else {
-            emptyList()
-        }
 
-        val address = try {
-            AccountAddress.fromHexRelaxed(addressStr)
-        } catch (e: Exception) {
-            throw TypeTagParseException("Invalid address in struct tag: $addressStr", e)
-        }
+        val address =
+            try {
+                AccountAddress.fromHexRelaxed(addressStr)
+            } catch (e: Exception) {
+                throw TypeTagParseException("Invalid address in struct tag: $addressStr", e)
+            }
 
         return StructTag(address, module, name, typeArgs)
     }

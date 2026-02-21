@@ -35,7 +35,7 @@ class AptosTest {
                         "node_role": "full_node", "oldest_block_height": "0",
                         "block_height": "5000000"
                     }
-                    """.trimIndent()
+                    """.trimIndent(),
                 ),
                 status = HttpStatusCode.OK,
                 headers = headersOf(HttpHeaders.ContentType, "application/json"),
@@ -58,7 +58,7 @@ class AptosTest {
                         "type": "0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>",
                         "data": {"coin": {"value": "1000000000"}, "frozen": false}
                     }
-                    """.trimIndent()
+                    """.trimIndent(),
                 ),
                 status = HttpStatusCode.OK,
                 headers = headersOf(HttpHeaders.ContentType, "application/json"),
@@ -123,7 +123,7 @@ class AptosTest {
             when {
                 path.contains("/accounts/") -> respond(
                     content = ByteReadChannel(
-                        """{"sequence_number": "5", "authentication_key": "0x01"}"""
+                        """{"sequence_number": "5", "authentication_key": "0x01"}""",
                     ),
                     status = HttpStatusCode.OK,
                     headers = headersOf(HttpHeaders.ContentType, "application/json"),
@@ -137,7 +137,7 @@ class AptosTest {
                             "node_role": "full_node", "oldest_block_height": "0",
                             "block_height": "1"
                         }
-                        """.trimIndent()
+                        """.trimIndent(),
                     ),
                     status = HttpStatusCode.OK,
                     headers = headersOf(HttpHeaders.ContentType, "application/json"),

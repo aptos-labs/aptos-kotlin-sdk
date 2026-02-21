@@ -11,7 +11,6 @@ import com.aptos.core.error.MnemonicException
  * @property components the ordered list of path components
  */
 data class DerivationPath(val components: List<Component>) {
-
     /**
      * A single component of a derivation path.
      *
@@ -25,7 +24,7 @@ data class DerivationPath(val components: List<Component>) {
             index.toInt()
         }
 
-        override fun toString(): String = if (hardened) "${index}'" else "$index"
+        override fun toString(): String = if (hardened) "$index'" else "$index"
     }
 
     override fun toString(): String = "m/${components.joinToString("/")}"
@@ -52,13 +51,15 @@ data class DerivationPath(val components: List<Component>) {
             if (parts.isEmpty()) {
                 throw MnemonicException("Derivation path has no components: $path")
             }
-            val components = parts.map { part ->
-                val hardened = part.endsWith("'") || part.endsWith("H")
-                val indexStr = if (hardened) part.dropLast(1) else part
-                val index = indexStr.toUIntOrNull()
-                    ?: throw MnemonicException("Invalid derivation path component: $part")
-                Component(index, hardened)
-            }
+            val components =
+                parts.map { part ->
+                    val hardened = part.endsWith("'") || part.endsWith("H")
+                    val indexStr = if (hardened) part.dropLast(1) else part
+                    val index =
+                        indexStr.toUIntOrNull()
+                            ?: throw MnemonicException("Invalid derivation path component: $part")
+                    Component(index, hardened)
+                }
             return DerivationPath(components)
         }
     }

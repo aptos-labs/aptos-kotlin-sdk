@@ -31,7 +31,6 @@ data class RawTransaction(
     val expirationTimestampSecs: ULong,
     val chainId: ChainId,
 ) : BcsSerializable {
-
     override fun serialize(serializer: BcsSerializer) {
         sender.serialize(serializer)
         serializer.serializeU64(sequenceNumber)

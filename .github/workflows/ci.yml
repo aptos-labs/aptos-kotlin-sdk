@@ -25,11 +25,28 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Check formatting
+        run: ./gradlew spotlessCheck
+
+      - name: Lint
+        run: ./gradlew detekt
+
       - name: Build
         run: ./gradlew build
 
       - name: Test
         run: ./gradlew test
+
+      - name: Generate coverage report
+        if: matrix.java-version == '21'
+        run: ./gradlew koverXmlReport koverHtmlReport
+
+      - name: Upload coverage report
+        if: matrix.java-version == '21'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: '**/build/reports/kover/'
 
       - name: Upload test reports
         if: failure()

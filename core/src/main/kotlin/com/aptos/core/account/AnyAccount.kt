@@ -8,12 +8,12 @@ import com.aptos.core.types.AccountAddress
  * Sealed class wrapper for runtime polymorphism across account types.
  */
 sealed class AnyAccount : Account {
-
     data class Ed25519(val account: Ed25519Account) : AnyAccount() {
         override val address: AccountAddress get() = account.address
         override val publicKeyBytes: ByteArray get() = account.publicKeyBytes
         override val scheme: SignatureScheme get() = account.scheme
         override val authenticationKey: AuthenticationKey get() = account.authenticationKey
+
         override fun sign(message: ByteArray): ByteArray = account.sign(message)
     }
 
@@ -22,6 +22,7 @@ sealed class AnyAccount : Account {
         override val publicKeyBytes: ByteArray get() = account.publicKeyBytes
         override val scheme: SignatureScheme get() = account.scheme
         override val authenticationKey: AuthenticationKey get() = account.authenticationKey
+
         override fun sign(message: ByteArray): ByteArray = account.sign(message)
     }
 

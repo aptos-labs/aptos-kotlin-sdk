@@ -5,7 +5,6 @@ import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 
 class HashingTest {
-
     @Test
     fun `sha3-256 of empty input`() {
         val hash = Hashing.sha3256(byteArrayOf())

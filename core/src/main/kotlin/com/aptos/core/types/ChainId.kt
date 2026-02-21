@@ -8,7 +8,6 @@ import com.aptos.core.bcs.BcsSerializer
  */
 @JvmInline
 value class ChainId(val value: UByte) : BcsSerializable {
-
     override fun serialize(serializer: BcsSerializer) {
         serializer.serializeU8(value)
     }
@@ -17,7 +16,9 @@ value class ChainId(val value: UByte) : BcsSerializable {
 
     companion object {
         @JvmStatic val MAINNET = ChainId(1u)
+
         @JvmStatic val TESTNET = ChainId(2u)
+
         @JvmStatic val LOCAL = ChainId(4u)
     }
 }

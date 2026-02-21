@@ -12,7 +12,6 @@ import com.aptos.core.types.HexString
  * @property data the raw 32-byte authentication key
  */
 data class AuthenticationKey(val data: ByteArray) {
-
     init {
         require(data.size == LENGTH) {
             "AuthenticationKey must be $LENGTH bytes, got ${data.size}"
@@ -31,6 +30,7 @@ data class AuthenticationKey(val data: ByteArray) {
     }
 
     override fun hashCode(): Int = data.contentHashCode()
+
     override fun toString(): String = toHex()
 
     companion object {
@@ -46,14 +46,12 @@ data class AuthenticationKey(val data: ByteArray) {
 
         /** Derives the authentication key for an Ed25519 public key (scheme id 0x00). */
         @JvmStatic
-        fun fromEd25519(publicKey: Ed25519.PublicKey): AuthenticationKey {
-            return fromPublicKey(publicKey.data, SignatureScheme.ED25519)
-        }
+        fun fromEd25519(publicKey: Ed25519.PublicKey): AuthenticationKey =
+            fromPublicKey(publicKey.data, SignatureScheme.ED25519)
 
         /** Derives the authentication key for a Secp256k1 public key (scheme id 0x01). */
         @JvmStatic
-        fun fromSecp256k1(publicKey: Secp256k1.PublicKey): AuthenticationKey {
-            return fromPublicKey(publicKey.data, SignatureScheme.SECP256K1)
-        }
+        fun fromSecp256k1(publicKey: Secp256k1.PublicKey): AuthenticationKey =
+            fromPublicKey(publicKey.data, SignatureScheme.SECP256K1)
     }
 }

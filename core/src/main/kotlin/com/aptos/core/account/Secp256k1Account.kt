@@ -18,7 +18,6 @@ class Secp256k1Account private constructor(
     val publicKey: Secp256k1.PublicKey,
     override val address: AccountAddress,
 ) : Account {
-
     override val publicKeyBytes: ByteArray get() = publicKey.data
     override val scheme: SignatureScheme get() = SignatureScheme.SECP256K1
     override val authenticationKey: AuthenticationKey by lazy {
@@ -45,9 +44,7 @@ class Secp256k1Account private constructor(
         }
 
         @JvmStatic
-        fun fromPrivateKeyHex(hex: String): Secp256k1Account {
-            return fromPrivateKey(Secp256k1.PrivateKey.fromHex(hex))
-        }
+        fun fromPrivateKeyHex(hex: String): Secp256k1Account = fromPrivateKey(Secp256k1.PrivateKey.fromHex(hex))
 
         /**
          * Derives a Secp256k1 account from a BIP-39 [mnemonic] using BIP-32 derivation.
@@ -55,10 +52,7 @@ class Secp256k1Account private constructor(
          * @param path the derivation path (default: `m/44'/637'/0'/0'/0'`)
          */
         @JvmStatic
-        fun fromMnemonic(
-            mnemonic: Mnemonic,
-            path: DerivationPath = DerivationPath.DEFAULT_APTOS,
-        ): Secp256k1Account {
+        fun fromMnemonic(mnemonic: Mnemonic, path: DerivationPath = DerivationPath.DEFAULT_APTOS): Secp256k1Account {
             val seed = mnemonic.toSeed()
             val derivedKey = Bip32.deriveSecp256k1(seed, path)
             return fromPrivateKey(Secp256k1.PrivateKey(derivedKey))

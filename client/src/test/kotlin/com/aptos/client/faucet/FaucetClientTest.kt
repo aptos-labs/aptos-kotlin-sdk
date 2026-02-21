@@ -5,7 +5,6 @@ import com.aptos.core.error.ApiException
 import com.aptos.core.types.AccountAddress
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
 import io.ktor.client.engine.mock.*
 import io.ktor.client.request.*
 import io.ktor.http.*

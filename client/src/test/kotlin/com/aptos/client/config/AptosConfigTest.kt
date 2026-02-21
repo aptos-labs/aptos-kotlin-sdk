@@ -6,7 +6,6 @@ import io.kotest.matchers.shouldNotBe
 import org.junit.jupiter.api.Test
 
 class AptosConfigTest {
-
     @Test
     fun `mainnet config`() {
         val config = AptosConfig.mainnet()
@@ -40,10 +39,11 @@ class AptosConfigTest {
 
     @Test
     fun `localnet config custom URLs`() {
-        val config = AptosConfig.localnet(
-            nodeUrl = "http://custom:9090/v1",
-            faucetUrl = "http://custom:9091",
-        )
+        val config =
+            AptosConfig.localnet(
+                nodeUrl = "http://custom:9090/v1",
+                faucetUrl = "http://custom:9091",
+            )
         config.nodeUrl shouldBe "http://custom:9090/v1"
         config.faucetUrl shouldBe "http://custom:9091"
     }
@@ -65,13 +65,14 @@ class AptosConfigTest {
 
     @Test
     fun `custom config`() {
-        val config = AptosConfig(
-            nodeUrl = "http://example.com/v1",
-            faucetUrl = "http://example.com/faucet",
-            chainId = ChainId(99u),
-            timeoutMs = 5000,
-            retryConfig = RetryConfig(maxRetries = 5),
-        )
+        val config =
+            AptosConfig(
+                nodeUrl = "http://example.com/v1",
+                faucetUrl = "http://example.com/faucet",
+                chainId = ChainId(99u),
+                timeoutMs = 5000,
+                retryConfig = RetryConfig(maxRetries = 5),
+            )
         config.nodeUrl shouldBe "http://example.com/v1"
         config.chainId shouldBe ChainId(99u)
         config.timeoutMs shouldBe 5000

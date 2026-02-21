@@ -5,7 +5,6 @@ import io.kotest.matchers.shouldNotBe
 import org.junit.jupiter.api.Test
 
 class Ed25519Test {
-
     @Test
     fun `generate key pair`() {
         val privateKey = Ed25519.PrivateKey.generate()

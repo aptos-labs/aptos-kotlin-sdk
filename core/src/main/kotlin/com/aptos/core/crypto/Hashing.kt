@@ -10,7 +10,6 @@ import org.bouncycastle.jcajce.provider.digest.SHA3
  * hashing used for transaction signing messages.
  */
 object Hashing {
-
     /** Computes the SHA3-256 hash of [data] (32-byte output). */
     @JvmStatic
     fun sha3256(data: ByteArray): ByteArray {
@@ -33,7 +32,7 @@ object Hashing {
      */
     @JvmStatic
     fun domainSeparatedHash(data: ByteArray, domainPrefix: String): ByteArray {
-        val prefixHash = sha3256("${domainPrefix}::$domainPrefix".toByteArray(Charsets.UTF_8))
+        val prefixHash = sha3256("$domainPrefix::$domainPrefix".toByteArray(Charsets.UTF_8))
         val digest = SHA3.Digest256()
         digest.update(prefixHash)
         digest.update(data)

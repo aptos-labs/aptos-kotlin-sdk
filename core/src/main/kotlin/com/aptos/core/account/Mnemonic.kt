@@ -14,7 +14,6 @@ import javax.crypto.spec.PBEKeySpec
  * @property words the individual mnemonic words
  */
 class Mnemonic private constructor(val words: List<String>) {
-
     /** Returns the mnemonic as a single space-separated string. */
     fun phrase(): String = words.joinToString(" ")
 
@@ -84,7 +83,9 @@ class Mnemonic private constructor(val words: List<String>) {
         fun fromEntropy(entropy: ByteArray): Mnemonic {
             val wordList = BIP39_ENGLISH_WORDLIST
             val checksumBits = entropy.size / 4
-            val hash = com.aptos.core.crypto.Hashing.sha256(entropy)
+            val hash =
+                com.aptos.core.crypto.Hashing
+                    .sha256(entropy)
 
             // Convert entropy + checksum to bit string
             val bits = StringBuilder()
@@ -121,13 +122,11 @@ class Mnemonic private constructor(val words: List<String>) {
 
         /** Returns `true` if [phrase] is a valid BIP-39 mnemonic. */
         @JvmStatic
-        fun isValid(phrase: String): Boolean {
-            return try {
-                fromPhrase(phrase)
-                true
-            } catch (_: MnemonicException) {
-                false
-            }
+        fun isValid(phrase: String): Boolean = try {
+            fromPhrase(phrase)
+            true
+        } catch (_: MnemonicException) {
+            false
         }
     }
 }

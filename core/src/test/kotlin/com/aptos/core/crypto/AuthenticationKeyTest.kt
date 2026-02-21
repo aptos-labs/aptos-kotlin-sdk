@@ -5,7 +5,6 @@ import io.kotest.matchers.shouldNotBe
 import org.junit.jupiter.api.Test
 
 class AuthenticationKeyTest {
-
     @Test
     fun `derive authentication key from Ed25519 public key`() {
         val privateKey = Ed25519.PrivateKey.generate()

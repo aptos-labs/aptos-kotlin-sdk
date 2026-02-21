@@ -6,7 +6,6 @@ import com.aptos.core.error.ApiException
 import com.aptos.core.types.AccountAddress
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
 import io.ktor.client.engine.mock.*
 import io.ktor.client.request.*
 import io.ktor.http.*
@@ -16,9 +15,8 @@ import org.junit.jupiter.api.Test
 
 class AptosRestClientTest {
 
-    private fun mockEngine(handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData): MockEngine {
-        return MockEngine(handler)
-    }
+    private fun mockEngine(handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData): MockEngine =
+        MockEngine(handler)
 
     private fun testConfig(retryConfig: RetryConfig = RetryConfig(maxRetries = 0)) = AptosConfig(
         nodeUrl = "https://fullnode.testnet.aptoslabs.com/v1",
@@ -43,7 +41,7 @@ class AptosRestClientTest {
                         "block_height": "5000000",
                         "git_hash": "abc123"
                     }
-                    """.trimIndent()
+                    """.trimIndent(),
                 ),
                 status = HttpStatusCode.OK,
                 headers = headersOf(HttpHeaders.ContentType, "application/json"),
@@ -69,7 +67,7 @@ class AptosRestClientTest {
                         "sequence_number": "42",
                         "authentication_key": "0x0000000000000000000000000000000000000000000000000000000000000001"
                     }
-                    """.trimIndent()
+                    """.trimIndent(),
                 ),
                 status = HttpStatusCode.OK,
                 headers = headersOf(HttpHeaders.ContentType, "application/json"),
@@ -94,7 +92,7 @@ class AptosRestClientTest {
                             "data": {"sequence_number": "0"}
                         }
                     ]
-                    """.trimIndent()
+                    """.trimIndent(),
                 ),
                 status = HttpStatusCode.OK,
                 headers = headersOf(HttpHeaders.ContentType, "application/json"),
@@ -122,7 +120,7 @@ class AptosRestClientTest {
                         "success": true,
                         "vm_status": "Executed successfully"
                     }
-                    """.trimIndent()
+                    """.trimIndent(),
                 ),
                 status = HttpStatusCode.OK,
                 headers = headersOf(HttpHeaders.ContentType, "application/json"),
@@ -147,7 +145,7 @@ class AptosRestClientTest {
                         "deprioritized_gas_estimate": 50,
                         "prioritized_gas_estimate": 200
                     }
-                    """.trimIndent()
+                    """.trimIndent(),
                 ),
                 status = HttpStatusCode.OK,
                 headers = headersOf(HttpHeaders.ContentType, "application/json"),
@@ -172,7 +170,7 @@ class AptosRestClientTest {
                         "message": "Account not found",
                         "error_code": "account_not_found"
                     }
-                    """.trimIndent()
+                    """.trimIndent(),
                 ),
                 status = HttpStatusCode.NotFound,
                 headers = headersOf(HttpHeaders.ContentType, "application/json"),
@@ -209,7 +207,7 @@ class AptosRestClientTest {
                             "node_role": "full_node", "oldest_block_height": "0",
                             "block_height": "1"
                         }
-                        """.trimIndent()
+                        """.trimIndent(),
                     ),
                     status = HttpStatusCode.OK,
                     headers = headersOf(HttpHeaders.ContentType, "application/json"),
@@ -278,7 +276,7 @@ class AptosRestClientTest {
                             "frozen": false
                         }
                     }
-                    """.trimIndent()
+                    """.trimIndent(),
                 ),
                 status = HttpStatusCode.OK,
                 headers = headersOf(HttpHeaders.ContentType, "application/json"),

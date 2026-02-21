@@ -3,7 +3,6 @@ package com.aptos.core.transaction
 import com.aptos.core.account.Ed25519Account
 import com.aptos.core.account.Secp256k1Account
 import com.aptos.core.bcs.BcsSerializer
-import com.aptos.core.crypto.Ed25519
 import com.aptos.core.crypto.Hashing
 import com.aptos.core.error.TransactionBuildException
 import com.aptos.core.types.AccountAddress
@@ -15,19 +14,20 @@ import io.kotest.matchers.shouldNotBe
 import org.junit.jupiter.api.Test
 
 class TransactionTest {
-
     private val testAccount = Ed25519Account.generate()
     private val recipient = AccountAddress.fromHexRelaxed("0xBOB".replace("BOB", "b0b"))
 
     @Test
     fun `build raw transaction`() {
         val payload = TransactionPayload.EntryFunction.aptTransfer(recipient, 1000uL)
-        val rawTxn = TransactionBuilder.builder()
-            .sender(testAccount.address)
-            .sequenceNumber(0uL)
-            .payload(payload)
-            .chainId(ChainId.TESTNET)
-            .build()
+        val rawTxn =
+            TransactionBuilder
+                .builder()
+                .sender(testAccount.address)
+                .sequenceNumber(0uL)
+                .payload(payload)
+                .chainId(ChainId.TESTNET)
+                .build()
 
         rawTxn.sender shouldBe testAccount.address
         rawTxn.sequenceNumber shouldBe 0uL
@@ -46,7 +46,8 @@ class TransactionTest {
     @Test
     fun `builder validates sender required`() {
         shouldThrow<TransactionBuildException> {
-            TransactionBuilder.builder()
+            TransactionBuilder
+                .builder()
                 .sequenceNumber(0uL)
                 .payload(TransactionPayload.EntryFunction.aptTransfer(recipient, 100uL))
                 .chainId(ChainId.TESTNET)
@@ -57,15 +58,16 @@ class TransactionTest {
     @Test
     fun `raw transaction BCS serialization`() {
         val payload = TransactionPayload.EntryFunction.aptTransfer(recipient, 1000uL)
-        val rawTxn = RawTransaction(
-            sender = testAccount.address,
-            sequenceNumber = 0uL,
-            payload = payload,
-            maxGasAmount = 200_000uL,
-            gasUnitPrice = 100uL,
-            expirationTimestampSecs = 1700000000uL,
-            chainId = ChainId.TESTNET,
-        )
+        val rawTxn =
+            RawTransaction(
+                sender = testAccount.address,
+                sequenceNumber = 0uL,
+                payload = payload,
+                maxGasAmount = 200_000uL,
+                gasUnitPrice = 100uL,
+                expirationTimestampSecs = 1700000000uL,
+                chainId = ChainId.TESTNET,
+            )
 
         val bytes = rawTxn.toBcs()
         bytes.size shouldNotBe 0
@@ -74,15 +76,16 @@ class TransactionTest {
     @Test
     fun `signing message starts with RAW_TRANSACTION_PREFIX`() {
         val payload = TransactionPayload.EntryFunction.aptTransfer(recipient, 1000uL)
-        val rawTxn = RawTransaction(
-            sender = testAccount.address,
-            sequenceNumber = 0uL,
-            payload = payload,
-            maxGasAmount = 200_000uL,
-            gasUnitPrice = 100uL,
-            expirationTimestampSecs = 1700000000uL,
-            chainId = ChainId.TESTNET,
-        )
+        val rawTxn =
+            RawTransaction(
+                sender = testAccount.address,
+                sequenceNumber = 0uL,
+                payload = payload,
+                maxGasAmount = 200_000uL,
+                gasUnitPrice = 100uL,
+                expirationTimestampSecs = 1700000000uL,
+                chainId = ChainId.TESTNET,
+            )
 
         val signingMessage = rawTxn.signingMessage()
         val prefix = signingMessage.copyOfRange(0, 32)
@@ -92,15 +95,16 @@ class TransactionTest {
     @Test
     fun `sign transaction with Ed25519`() {
         val payload = TransactionPayload.EntryFunction.aptTransfer(recipient, 1000uL)
-        val rawTxn = RawTransaction(
-            sender = testAccount.address,
-            sequenceNumber = 0uL,
-            payload = payload,
-            maxGasAmount = 200_000uL,
-            gasUnitPrice = 100uL,
-            expirationTimestampSecs = 1700000000uL,
-            chainId = ChainId.TESTNET,
-        )
+        val rawTxn =
+            RawTransaction(
+                sender = testAccount.address,
+                sequenceNumber = 0uL,
+                payload = payload,
+                maxGasAmount = 200_000uL,
+                gasUnitPrice = 100uL,
+                expirationTimestampSecs = 1700000000uL,
+                chainId = ChainId.TESTNET,
+            )
 
         val signedTxn = TransactionBuilder.signTransaction(testAccount, rawTxn)
         signedTxn.rawTransaction shouldBe rawTxn
@@ -115,15 +119,16 @@ class TransactionTest {
     fun `sign transaction with Secp256k1`() {
         val secpAccount = Secp256k1Account.generate()
         val payload = TransactionPayload.EntryFunction.aptTransfer(recipient, 1000uL)
-        val rawTxn = RawTransaction(
-            sender = secpAccount.address,
-            sequenceNumber = 0uL,
-            payload = payload,
-            maxGasAmount = 200_000uL,
-            gasUnitPrice = 100uL,
-            expirationTimestampSecs = 1700000000uL,
-            chainId = ChainId.TESTNET,
-        )
+        val rawTxn =
+            RawTransaction(
+                sender = secpAccount.address,
+                sequenceNumber = 0uL,
+                payload = payload,
+                maxGasAmount = 200_000uL,
+                gasUnitPrice = 100uL,
+                expirationTimestampSecs = 1700000000uL,
+                chainId = ChainId.TESTNET,
+            )
 
         val signedTxn = TransactionBuilder.signTransaction(secpAccount, rawTxn)
         signedTxn.authenticator shouldNotBe null
@@ -134,15 +139,16 @@ class TransactionTest {
     @Test
     fun `signed transaction produces submit bytes`() {
         val payload = TransactionPayload.EntryFunction.aptTransfer(recipient, 1000uL)
-        val rawTxn = RawTransaction(
-            sender = testAccount.address,
-            sequenceNumber = 0uL,
-            payload = payload,
-            maxGasAmount = 200_000uL,
-            gasUnitPrice = 100uL,
-            expirationTimestampSecs = 1700000000uL,
-            chainId = ChainId.TESTNET,
-        )
+        val rawTxn =
+            RawTransaction(
+                sender = testAccount.address,
+                sequenceNumber = 0uL,
+                payload = payload,
+                maxGasAmount = 200_000uL,
+                gasUnitPrice = 100uL,
+                expirationTimestampSecs = 1700000000uL,
+                chainId = ChainId.TESTNET,
+            )
 
         val signedTxn = TransactionBuilder.signTransaction(testAccount, rawTxn)
         val bytes = signedTxn.toSubmitBytes()
@@ -152,15 +158,16 @@ class TransactionTest {
     @Test
     fun `signed transaction hash is 32 bytes`() {
         val payload = TransactionPayload.EntryFunction.aptTransfer(recipient, 1000uL)
-        val rawTxn = RawTransaction(
-            sender = testAccount.address,
-            sequenceNumber = 0uL,
-            payload = payload,
-            maxGasAmount = 200_000uL,
-            gasUnitPrice = 100uL,
-            expirationTimestampSecs = 1700000000uL,
-            chainId = ChainId.TESTNET,
-        )
+        val rawTxn =
+            RawTransaction(
+                sender = testAccount.address,
+                sequenceNumber = 0uL,
+                payload = payload,
+                maxGasAmount = 200_000uL,
+                gasUnitPrice = 100uL,
+                expirationTimestampSecs = 1700000000uL,
+                chainId = ChainId.TESTNET,
+            )
 
         val signedTxn = TransactionBuilder.signTransaction(testAccount, rawTxn)
         signedTxn.hash().size shouldBe 32
@@ -187,15 +194,17 @@ class TransactionTest {
 
     @Test
     fun `builder fluent API with sign`() {
-        val signedTxn = TransactionBuilder.builder()
-            .sender(testAccount.address)
-            .sequenceNumber(5uL)
-            .payload(TransactionPayload.EntryFunction.aptTransfer(recipient, 100uL))
-            .maxGasAmount(50_000uL)
-            .gasUnitPrice(200uL)
-            .expirationTimestampSecs(1700000000uL)
-            .chainId(ChainId.TESTNET)
-            .sign(testAccount)
+        val signedTxn =
+            TransactionBuilder
+                .builder()
+                .sender(testAccount.address)
+                .sequenceNumber(5uL)
+                .payload(TransactionPayload.EntryFunction.aptTransfer(recipient, 100uL))
+                .maxGasAmount(50_000uL)
+                .gasUnitPrice(200uL)
+                .expirationTimestampSecs(1700000000uL)
+                .chainId(ChainId.TESTNET)
+                .sign(testAccount)
 
         signedTxn.rawTransaction.sequenceNumber shouldBe 5uL
         signedTxn.rawTransaction.maxGasAmount shouldBe 50_000uL

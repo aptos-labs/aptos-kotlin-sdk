@@ -15,7 +15,6 @@ import org.junit.jupiter.params.provider.ValueSource
  */
 @Suppress("MaxLineLength")
 class AddressSpecTest {
-
     // ---- Valid address parsing (relaxed) ----
 
     @ParameterizedTest(name = "fromHexRelaxed(\"{0}\") -> short=\"{1}\", full=\"{2}\"")
@@ -60,7 +59,7 @@ class AddressSpecTest {
     fun `65 hex chars is rejected as too long`() {
         shouldThrow<AccountAddressParseException> {
             AccountAddress.fromHexRelaxed(
-                "0x00000000000000000000000000000000000000000000000000000000000000001"
+                "0x00000000000000000000000000000000000000000000000000000000000000001",
             )
         }
     }
@@ -129,9 +128,10 @@ class AddressSpecTest {
     @Test
     fun `short and full form of same address are equal`() {
         val fromShort = AccountAddress.fromHexRelaxed("0x1")
-        val fromFull = AccountAddress.fromHexRelaxed(
-            "0x0000000000000000000000000000000000000000000000000000000000000001"
-        )
+        val fromFull =
+            AccountAddress.fromHexRelaxed(
+                "0x0000000000000000000000000000000000000000000000000000000000000001",
+            )
         fromShort shouldBe fromFull
     }
 

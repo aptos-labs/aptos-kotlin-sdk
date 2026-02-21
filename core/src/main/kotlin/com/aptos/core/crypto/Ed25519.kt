@@ -16,7 +16,6 @@ import java.security.SecureRandom
  * via Bouncy Castle. All keys and signatures are represented as byte arrays.
  */
 object Ed25519 {
-
     const val PRIVATE_KEY_LENGTH = 32
     const val PUBLIC_KEY_LENGTH = 32
     const val SIGNATURE_LENGTH = 64
@@ -61,6 +60,7 @@ object Ed25519 {
         }
 
         override fun hashCode(): Int = data.contentHashCode()
+
         override fun toString(): String = "Ed25519PrivateKey(***)"
 
         companion object {
@@ -105,16 +105,14 @@ object Ed25519 {
          *
          * @throws CryptoException if verification encounters an error
          */
-        fun verify(message: ByteArray, signature: Signature): Boolean {
-            return try {
-                val params = Ed25519PublicKeyParameters(data, 0)
-                val verifier = Ed25519Signer()
-                verifier.init(false, params)
-                verifier.update(message, 0, message.size)
-                verifier.verifySignature(signature.data)
-            } catch (e: Exception) {
-                throw CryptoException("Ed25519 verification failed", e)
-            }
+        fun verify(message: ByteArray, signature: Signature): Boolean = try {
+            val params = Ed25519PublicKeyParameters(data, 0)
+            val verifier = Ed25519Signer()
+            verifier.init(false, params)
+            verifier.update(message, 0, message.size)
+            verifier.verifySignature(signature.data)
+        } catch (e: Exception) {
+            throw CryptoException("Ed25519 verification failed", e)
         }
 
         fun toHex(): String = HexString.encodeWithPrefix(data)
@@ -126,6 +124,7 @@ object Ed25519 {
         }
 
         override fun hashCode(): Int = data.contentHashCode()
+
         override fun toString(): String = "Ed25519PublicKey(${toHex()})"
 
         companion object {
@@ -159,6 +158,7 @@ object Ed25519 {
         }
 
         override fun hashCode(): Int = data.contentHashCode()
+
         override fun toString(): String = "Ed25519Signature(${toHex()})"
 
         companion object {

@@ -6,7 +6,6 @@ import io.kotest.matchers.shouldNotBe
 import org.junit.jupiter.api.Test
 
 class AccountTest {
-
     @Test
     fun `Ed25519Account generate`() {
         val account = Ed25519Account.generate()
@@ -25,9 +24,10 @@ class AccountTest {
 
     @Test
     fun `Ed25519Account from mnemonic is deterministic`() {
-        val mnemonic = Mnemonic.fromPhrase(
-            "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
-        )
+        val mnemonic =
+            Mnemonic.fromPhrase(
+                "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
+            )
         val account1 = Ed25519Account.fromMnemonic(mnemonic)
         val account2 = Ed25519Account.fromMnemonic(mnemonic)
         account1.address shouldBe account2.address
@@ -36,9 +36,10 @@ class AccountTest {
 
     @Test
     fun `Ed25519Account from mnemonic with different paths gives different accounts`() {
-        val mnemonic = Mnemonic.fromPhrase(
-            "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
-        )
+        val mnemonic =
+            Mnemonic.fromPhrase(
+                "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
+            )
         val account1 = Ed25519Account.fromMnemonic(mnemonic, DerivationPath.parse("m/44'/637'/0'/0'/0'"))
         val account2 = Ed25519Account.fromMnemonic(mnemonic, DerivationPath.parse("m/44'/637'/0'/0'/1'"))
         account1.address shouldNotBe account2.address
@@ -62,9 +63,10 @@ class AccountTest {
 
     @Test
     fun `Secp256k1Account from mnemonic is deterministic`() {
-        val mnemonic = Mnemonic.fromPhrase(
-            "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
-        )
+        val mnemonic =
+            Mnemonic.fromPhrase(
+                "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
+            )
         val account1 = Secp256k1Account.fromMnemonic(mnemonic)
         val account2 = Secp256k1Account.fromMnemonic(mnemonic)
         account1.address shouldBe account2.address

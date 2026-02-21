@@ -32,10 +32,7 @@ import kotlinx.serialization.json.jsonPrimitive
  * @param config the network and retry configuration
  * @param engine optional Ktor [HttpClientEngine] (defaults to CIO; use MockEngine for testing)
  */
-class AptosRestClient(
-    val config: AptosConfig,
-    engine: HttpClientEngine? = null,
-) {
+class AptosRestClient(val config: AptosConfig, engine: HttpClientEngine? = null) {
     private val json = Json {
         ignoreUnknownKeys = true
         isLenient = true
@@ -82,10 +79,7 @@ class AptosRestClient(
         response.body()
     }
 
-    suspend fun getAccountResource(
-        address: AccountAddress,
-        resourceType: String,
-    ): AccountResource = retryable {
+    suspend fun getAccountResource(address: AccountAddress, resourceType: String): AccountResource = retryable {
         val response = httpClient.get("$baseUrl/accounts/${address.toHex()}/resource/$resourceType")
         handleResponse(response)
         response.body()
@@ -183,9 +177,7 @@ class AptosRestClient(
 
     // --- Helpers ---
 
-    private suspend fun <T> retryable(block: suspend () -> T): T {
-        return RetryPolicy.withRetry(config.retryConfig, block)
-    }
+    private suspend fun <T> retryable(block: suspend () -> T): T = RetryPolicy.withRetry(config.retryConfig, block)
 
     private suspend fun handleResponse(response: HttpResponse) {
         if (!response.status.isSuccess()) {

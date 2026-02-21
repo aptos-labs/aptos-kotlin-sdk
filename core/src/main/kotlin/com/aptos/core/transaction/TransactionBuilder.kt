@@ -63,8 +63,9 @@ class TransactionBuilder {
         val seq = sequenceNumber ?: throw TransactionBuildException("sequenceNumber is required")
         val p = payload ?: throw TransactionBuildException("payload is required")
         val cid = chainId ?: throw TransactionBuildException("chainId is required")
-        val exp = expirationTimestampSecs
-            ?: (System.currentTimeMillis() / 1000 + 600).toULong()
+        val exp =
+            expirationTimestampSecs
+                ?: (System.currentTimeMillis() / 1000 + 600).toULong()
 
         return RawTransaction(
             sender = s,
@@ -79,32 +80,37 @@ class TransactionBuilder {
 
     /** Builds and signs the transaction with the given [account]. */
     fun sign(account: Account): SignedTransaction {
-        val rawTxn = build().also {
-            if (sender == null) sender = account.address
-        }
-        val actualRawTxn = if (sender != account.address) {
-            rawTxn
-        } else {
-            rawTxn.copy(sender = account.address)
-        }
+        val rawTxn =
+            build().also {
+                if (sender == null) sender = account.address
+            }
+        val actualRawTxn =
+            if (sender != account.address) {
+                rawTxn
+            } else {
+                rawTxn.copy(sender = account.address)
+            }
 
         val signingMessage = actualRawTxn.signingMessage()
         val signatureBytes = account.sign(signingMessage)
 
-        val authenticator = when (account.scheme) {
-            SignatureScheme.ED25519 -> TransactionAuthenticator.Ed25519Auth(
-                publicKey = Ed25519.PublicKey(account.publicKeyBytes),
-                signature = Ed25519.Signature(signatureBytes),
-            )
-            SignatureScheme.SECP256K1 -> TransactionAuthenticator.SingleSender(
-                AccountAuthenticator.SingleKey(
-                    publicKeyType = 1u, // Secp256k1 = 1
-                    publicKeyBytes = account.publicKeyBytes,
-                    signatureType = 1u, // Secp256k1 = 1
-                    signatureBytes = signatureBytes,
-                )
-            )
-        }
+        val authenticator =
+            when (account.scheme) {
+                SignatureScheme.ED25519 ->
+                    TransactionAuthenticator.Ed25519Auth(
+                        publicKey = Ed25519.PublicKey(account.publicKeyBytes),
+                        signature = Ed25519.Signature(signatureBytes),
+                    )
+                SignatureScheme.SECP256K1 ->
+                    TransactionAuthenticator.SingleSender(
+                        AccountAuthenticator.SingleKey(
+                            publicKeyType = 1u, // Secp256k1 = 1
+                            publicKeyBytes = account.publicKeyBytes,
+                            signatureType = 1u, // Secp256k1 = 1
+                            signatureBytes = signatureBytes,
+                        ),
+                    )
+            }
 
         return SignedTransaction(actualRawTxn, authenticator)
     }
@@ -115,27 +121,27 @@ class TransactionBuilder {
 
         /** Signs a pre-built [rawTransaction] with the given [account]. */
         @JvmStatic
-        fun signTransaction(
-            account: Account,
-            rawTransaction: RawTransaction,
-        ): SignedTransaction {
+        fun signTransaction(account: Account, rawTransaction: RawTransaction): SignedTransaction {
             val signingMessage = rawTransaction.signingMessage()
             val signatureBytes = account.sign(signingMessage)
 
-            val authenticator = when (account.scheme) {
-                SignatureScheme.ED25519 -> TransactionAuthenticator.Ed25519Auth(
-                    publicKey = Ed25519.PublicKey(account.publicKeyBytes),
-                    signature = Ed25519.Signature(signatureBytes),
-                )
-                SignatureScheme.SECP256K1 -> TransactionAuthenticator.SingleSender(
-                    AccountAuthenticator.SingleKey(
-                        publicKeyType = 1u,
-                        publicKeyBytes = account.publicKeyBytes,
-                        signatureType = 1u,
-                        signatureBytes = signatureBytes,
-                    )
-                )
-            }
+            val authenticator =
+                when (account.scheme) {
+                    SignatureScheme.ED25519 ->
+                        TransactionAuthenticator.Ed25519Auth(
+                            publicKey = Ed25519.PublicKey(account.publicKeyBytes),
+                            signature = Ed25519.Signature(signatureBytes),
+                        )
+                    SignatureScheme.SECP256K1 ->
+                        TransactionAuthenticator.SingleSender(
+                            AccountAuthenticator.SingleKey(
+                                publicKeyType = 1u,
+                                publicKeyBytes = account.publicKeyBytes,
+                                signatureType = 1u,
+                                signatureBytes = signatureBytes,
+                            ),
+                        )
+                }
 
             return SignedTransaction(rawTransaction, authenticator)
         }

@@ -8,7 +8,6 @@ import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 
 class StructTagTest {
-
     @Test
     fun `parse simple struct tag`() {
         val tag = StructTag.fromString("0x1::aptos_coin::AptosCoin")
@@ -98,7 +97,6 @@ class StructTagTest {
 }
 
 class MoveModuleIdTest {
-
     @Test
     fun `parse module id`() {
         val id = MoveModuleId.fromString("0x1::aptos_account")

@@ -34,17 +34,29 @@ class BcsDeserializer(private val input: ByteArray) {
 
     fun deserializeU16(): UShort {
         val bytes = readBytes(2)
-        return ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).short.toUShort()
+        return ByteBuffer
+            .wrap(bytes)
+            .order(ByteOrder.LITTLE_ENDIAN)
+            .short
+            .toUShort()
     }
 
     fun deserializeU32(): UInt {
         val bytes = readBytes(4)
-        return ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).int.toUInt()
+        return ByteBuffer
+            .wrap(bytes)
+            .order(ByteOrder.LITTLE_ENDIAN)
+            .int
+            .toUInt()
     }
 
     fun deserializeU64(): ULong {
         val bytes = readBytes(8)
-        return ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).long.toULong()
+        return ByteBuffer
+            .wrap(bytes)
+            .order(ByteOrder.LITTLE_ENDIAN)
+            .long
+            .toULong()
     }
 
     fun deserializeU128(): BigInteger {
@@ -64,14 +76,10 @@ class BcsDeserializer(private val input: ByteArray) {
     }
 
     /** Deserializes a UTF-8 string (ULEB128 byte-length prefix followed by UTF-8 bytes). */
-    fun deserializeString(): String {
-        return deserializeBytes().toString(Charsets.UTF_8)
-    }
+    fun deserializeString(): String = deserializeBytes().toString(Charsets.UTF_8)
 
     /** Reads exactly [length] raw bytes without a length prefix. */
-    fun deserializeFixedBytes(length: Int): ByteArray {
-        return readBytes(length)
-    }
+    fun deserializeFixedBytes(length: Int): ByteArray = readBytes(length)
 
     /** Decodes a ULEB128-encoded unsigned 32-bit integer. */
     fun deserializeUleb128(): UInt {
@@ -100,7 +108,7 @@ class BcsDeserializer(private val input: ByteArray) {
     private fun readByte(): Byte {
         if (offset >= input.size) {
             throw BcsDeserializationException(
-                "Unexpected end of input at offset $offset (input length: ${input.size})"
+                "Unexpected end of input at offset $offset (input length: ${input.size})",
             )
         }
         return input[offset++]
@@ -109,7 +117,7 @@ class BcsDeserializer(private val input: ByteArray) {
     private fun readBytes(count: Int): ByteArray {
         if (offset + count > input.size) {
             throw BcsDeserializationException(
-                "Unexpected end of input: need $count bytes at offset $offset (input length: ${input.size})"
+                "Unexpected end of input: need $count bytes at offset $offset (input length: ${input.size})",
             )
         }
         val result = input.copyOfRange(offset, offset + count)

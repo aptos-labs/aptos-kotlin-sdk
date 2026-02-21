@@ -6,7 +6,6 @@ import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 
 class DerivationPathTest {
-
     @Test
     fun `DEFAULT_APTOS path`() {
         val path = DerivationPath.DEFAULT_APTOS

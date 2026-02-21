@@ -18,7 +18,6 @@ class Ed25519Account private constructor(
     val publicKey: Ed25519.PublicKey,
     override val address: AccountAddress,
 ) : Account {
-
     override val publicKeyBytes: ByteArray get() = publicKey.data
     override val scheme: SignatureScheme get() = SignatureScheme.ED25519
     override val authenticationKey: AuthenticationKey by lazy {
@@ -45,9 +44,7 @@ class Ed25519Account private constructor(
         }
 
         @JvmStatic
-        fun fromPrivateKeyHex(hex: String): Ed25519Account {
-            return fromPrivateKey(Ed25519.PrivateKey.fromHex(hex))
-        }
+        fun fromPrivateKeyHex(hex: String): Ed25519Account = fromPrivateKey(Ed25519.PrivateKey.fromHex(hex))
 
         /**
          * Derives an Ed25519 account from a BIP-39 [mnemonic] using SLIP-0010 derivation.
@@ -55,10 +52,7 @@ class Ed25519Account private constructor(
          * @param path the derivation path (default: `m/44'/637'/0'/0'/0'`)
          */
         @JvmStatic
-        fun fromMnemonic(
-            mnemonic: Mnemonic,
-            path: DerivationPath = DerivationPath.DEFAULT_APTOS,
-        ): Ed25519Account {
+        fun fromMnemonic(mnemonic: Mnemonic, path: DerivationPath = DerivationPath.DEFAULT_APTOS): Ed25519Account {
             val seed = mnemonic.toSeed()
             val derivedKey = Slip0010.deriveEd25519(seed, path)
             return fromPrivateKey(Ed25519.PrivateKey(derivedKey))

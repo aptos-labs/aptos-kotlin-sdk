@@ -5,7 +5,6 @@ import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 
 class HexStringTest {
-
     @Test
     fun `encode empty bytes`() {
         HexString.encode(byteArrayOf()) shouldBe ""

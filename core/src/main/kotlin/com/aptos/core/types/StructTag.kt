@@ -21,7 +21,6 @@ data class StructTag(
     val name: String,
     val typeArgs: List<TypeTag> = emptyList(),
 ) : BcsSerializable {
-
     override fun serialize(serializer: BcsSerializer) {
         address.serialize(serializer)
         serializer.serializeString(module)
@@ -32,8 +31,11 @@ data class StructTag(
 
     override fun toString(): String {
         val base = "${address.toShortString()}::$module::$name"
-        return if (typeArgs.isEmpty()) base
-        else "$base<${typeArgs.joinToString(", ")}>"
+        return if (typeArgs.isEmpty()) {
+            base
+        } else {
+            "$base<${typeArgs.joinToString(", ")}>"
+        }
     }
 
     companion object {
@@ -74,11 +76,7 @@ data class StructTag(
  * @property address the account address where the module is published
  * @property name the module name
  */
-data class MoveModuleId(
-    val address: AccountAddress,
-    val name: String,
-) : BcsSerializable {
-
+data class MoveModuleId(val address: AccountAddress, val name: String) : BcsSerializable {
     override fun serialize(serializer: BcsSerializer) {
         address.serialize(serializer)
         serializer.serializeString(name)
@@ -98,11 +96,12 @@ data class MoveModuleId(
             if (parts.size != 2) {
                 throw TypeTagParseException("Invalid module ID format: $input (expected 'address::module')")
             }
-            val address = try {
-                AccountAddress.fromHexRelaxed(parts[0])
-            } catch (e: Exception) {
-                throw TypeTagParseException("Invalid address in module ID: ${parts[0]}", e)
-            }
+            val address =
+                try {
+                    AccountAddress.fromHexRelaxed(parts[0])
+                } catch (e: Exception) {
+                    throw TypeTagParseException("Invalid address in module ID: ${parts[0]}", e)
+                }
             return MoveModuleId(address, parts[1])
         }
 

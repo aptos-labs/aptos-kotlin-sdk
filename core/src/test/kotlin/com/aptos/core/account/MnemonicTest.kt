@@ -7,7 +7,6 @@ import io.kotest.matchers.shouldNotBe
 import org.junit.jupiter.api.Test
 
 class MnemonicTest {
-
     @Test
     fun `generate 12-word mnemonic`() {
         val mnemonic = Mnemonic.generate(12)
@@ -45,18 +44,20 @@ class MnemonicTest {
 
     @Test
     fun `toSeed produces 64-byte seed`() {
-        val mnemonic = Mnemonic.fromPhrase(
-            "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
-        )
+        val mnemonic =
+            Mnemonic.fromPhrase(
+                "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
+            )
         val seed = mnemonic.toSeed()
         seed.size shouldBe 64
     }
 
     @Test
     fun `toSeed is deterministic`() {
-        val mnemonic = Mnemonic.fromPhrase(
-            "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
-        )
+        val mnemonic =
+            Mnemonic.fromPhrase(
+                "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
+            )
         val seed1 = mnemonic.toSeed()
         val seed2 = mnemonic.toSeed()
         seed1 shouldBe seed2
@@ -64,9 +65,10 @@ class MnemonicTest {
 
     @Test
     fun `toSeed with passphrase differs from without`() {
-        val mnemonic = Mnemonic.fromPhrase(
-            "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
-        )
+        val mnemonic =
+            Mnemonic.fromPhrase(
+                "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
+            )
         val seedNoPass = mnemonic.toSeed()
         val seedWithPass = mnemonic.toSeed("my passphrase")
         (seedNoPass.contentEquals(seedWithPass)) shouldBe false
@@ -75,7 +77,7 @@ class MnemonicTest {
     @Test
     fun `isValid returns true for valid phrase`() {
         Mnemonic.isValid(
-            "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
+            "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
         ) shouldBe true
     }
 

@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test
 import java.math.BigInteger
 
 class BcsDeserializerTest {
-
     @Test
     fun `deserialize bool true`() {
         val d = BcsDeserializer(byteArrayOf(1))

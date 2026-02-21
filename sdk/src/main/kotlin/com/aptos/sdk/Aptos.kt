@@ -2,10 +2,17 @@ package com.aptos.sdk
 
 import com.aptos.client.config.AptosConfig
 import com.aptos.client.faucet.FaucetClient
-import com.aptos.client.rest.*
+import com.aptos.client.rest.AccountInfo
+import com.aptos.client.rest.AccountResource
+import com.aptos.client.rest.AptosRestClient
+import com.aptos.client.rest.GasEstimate
+import com.aptos.client.rest.LedgerInfo
+import com.aptos.client.rest.PendingTransaction
+import com.aptos.client.rest.TransactionResponse
 import com.aptos.core.account.Account
-import com.aptos.core.account.Ed25519Account
-import com.aptos.core.transaction.*
+import com.aptos.core.transaction.SignedTransaction
+import com.aptos.core.transaction.TransactionBuilder
+import com.aptos.core.transaction.TransactionPayload
 import com.aptos.core.types.AccountAddress
 import com.aptos.core.types.ChainId
 import io.ktor.client.engine.*
@@ -94,8 +101,7 @@ class Aptos private constructor(
         pollIntervalMs: Long = 1_000,
     ): TransactionResponse = restClient.waitForTransaction(hash, timeoutMs, pollIntervalMs)
 
-    suspend fun getTransactionByHash(hash: String): TransactionResponse =
-        restClient.getTransactionByHash(hash)
+    suspend fun getTransactionByHash(hash: String): TransactionResponse = restClient.getTransactionByHash(hash)
 
     // --- View ---
 

@@ -3,7 +3,6 @@ package com.aptos.core.transaction
 import com.aptos.core.bcs.BcsSerializable
 import com.aptos.core.bcs.BcsSerializer
 import com.aptos.core.crypto.Ed25519
-import com.aptos.core.crypto.Secp256k1
 
 /**
  * Sealed class for account-level authenticators used within transaction authenticators.
@@ -11,12 +10,9 @@ import com.aptos.core.crypto.Secp256k1
  * BCS variant indices: Ed25519=0, SingleKey=2.
  */
 sealed class AccountAuthenticator : BcsSerializable {
-
     /** Ed25519 account authenticator (variant index 0). */
-    data class Ed25519Auth(
-        val publicKey: Ed25519.PublicKey,
-        val signature: Ed25519.Signature,
-    ) : AccountAuthenticator() {
+    data class Ed25519Auth(val publicKey: Ed25519.PublicKey, val signature: Ed25519.Signature) :
+        AccountAuthenticator() {
         override fun serialize(serializer: BcsSerializer) {
             serializer.serializeVariantIndex(0u) // Ed25519 = 0
             publicKey.serialize(serializer)
@@ -66,12 +62,9 @@ sealed class AccountAuthenticator : BcsSerializable {
  * BCS variant indices: Ed25519=0, SingleSender=4.
  */
 sealed class TransactionAuthenticator : BcsSerializable {
-
     /** Ed25519 transaction authenticator (variant index 0) -- legacy format. */
-    data class Ed25519Auth(
-        val publicKey: Ed25519.PublicKey,
-        val signature: Ed25519.Signature,
-    ) : TransactionAuthenticator() {
+    data class Ed25519Auth(val publicKey: Ed25519.PublicKey, val signature: Ed25519.Signature) :
+        TransactionAuthenticator() {
         override fun serialize(serializer: BcsSerializer) {
             serializer.serializeVariantIndex(0u)
             publicKey.serialize(serializer)
@@ -80,9 +73,7 @@ sealed class TransactionAuthenticator : BcsSerializable {
     }
 
     /** SingleSender transaction authenticator (variant index 4) -- used for all key types. */
-    data class SingleSender(
-        val accountAuthenticator: AccountAuthenticator,
-    ) : TransactionAuthenticator() {
+    data class SingleSender(val accountAuthenticator: AccountAuthenticator) : TransactionAuthenticator() {
         override fun serialize(serializer: BcsSerializer) {
             serializer.serializeVariantIndex(4u)
             accountAuthenticator.serialize(serializer)

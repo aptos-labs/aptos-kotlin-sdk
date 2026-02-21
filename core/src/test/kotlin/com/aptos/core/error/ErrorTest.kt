@@ -6,7 +6,6 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import org.junit.jupiter.api.Test
 
 class ErrorTest {
-
     @Test
     fun `AptosException is RuntimeException`() {
         val ex = AptosException("test")
@@ -81,7 +80,6 @@ class ErrorTest {
 }
 
 class ErrorCategoryTest {
-
     @Test
     fun `all categories have unique codes`() {
         val codes = ErrorCategory.entries.map { it.code }

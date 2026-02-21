@@ -16,8 +16,9 @@ import com.aptos.core.error.AccountAddressParseException
  *
  * @property data the raw 32-byte address
  */
-data class AccountAddress(val data: ByteArray) : BcsSerializable, Comparable<AccountAddress> {
-
+data class AccountAddress(val data: ByteArray) :
+    BcsSerializable,
+    Comparable<AccountAddress> {
     init {
         require(data.size == LENGTH) {
             "AccountAddress must be exactly $LENGTH bytes, got ${data.size}"
@@ -89,7 +90,7 @@ data class AccountAddress(val data: ByteArray) : BcsSerializable, Comparable<Acc
             }
             if (stripped.length > LENGTH * 2) {
                 throw AccountAddressParseException(
-                    "Hex string too long: ${stripped.length} chars (max ${LENGTH * 2})"
+                    "Hex string too long: ${stripped.length} chars (max ${LENGTH * 2})",
                 )
             }
             // Strict: must be either LONG form (64 chars) or SHORT form (1-4 chars for special addresses 0x0-0xf)
@@ -97,14 +98,15 @@ data class AccountAddress(val data: ByteArray) : BcsSerializable, Comparable<Acc
                 // Short form allowed only for special addresses (0x0 through 0xf)
                 if (stripped.length > 4) {
                     throw AccountAddressParseException(
-                        "Hex string is not in long form (expected ${LENGTH * 2} chars): 0x$stripped"
+                        "Hex string is not in long form (expected ${LENGTH * 2} chars): 0x$stripped",
                     )
                 }
-                val value = stripped.toLongOrNull(16)
-                    ?: throw AccountAddressParseException("Invalid hex characters in: 0x$stripped")
+                val value =
+                    stripped.toLongOrNull(16)
+                        ?: throw AccountAddressParseException("Invalid hex characters in: 0x$stripped")
                 if (value > 15) {
                     throw AccountAddressParseException(
-                        "Short form only allowed for special addresses 0x0 through 0xf, got: 0x$stripped"
+                        "Short form only allowed for special addresses 0x0 through 0xf, got: 0x$stripped",
                     )
                 }
             }
@@ -129,7 +131,7 @@ data class AccountAddress(val data: ByteArray) : BcsSerializable, Comparable<Acc
             }
             if (stripped.length > LENGTH * 2) {
                 throw AccountAddressParseException(
-                    "Hex string too long: ${stripped.length} chars (max ${LENGTH * 2})"
+                    "Hex string too long: ${stripped.length} chars (max ${LENGTH * 2})",
                 )
             }
             val padded = stripped.padStart(LENGTH * 2, '0')
@@ -142,19 +144,16 @@ data class AccountAddress(val data: ByteArray) : BcsSerializable, Comparable<Acc
 
         /** Deserializes an [AccountAddress] from BCS (reads exactly 32 bytes). */
         @JvmStatic
-        fun fromBcs(deserializer: BcsDeserializer): AccountAddress {
-            return AccountAddress(deserializer.deserializeFixedBytes(LENGTH))
-        }
+        fun fromBcs(deserializer: BcsDeserializer): AccountAddress =
+            AccountAddress(deserializer.deserializeFixedBytes(LENGTH))
 
         /** Returns `true` if [hex] is a valid strict-form address string. */
         @JvmStatic
-        fun isValid(hex: String): Boolean {
-            return try {
-                fromHex(hex)
-                true
-            } catch (_: AccountAddressParseException) {
-                false
-            }
+        fun isValid(hex: String): Boolean = try {
+            fromHex(hex)
+            true
+        } catch (_: AccountAddressParseException) {
+            false
         }
     }
 }

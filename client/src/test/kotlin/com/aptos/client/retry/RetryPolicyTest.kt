@@ -8,7 +8,6 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 
 class RetryPolicyTest {
-
     @Test
     fun `isRetryable for 429`() {
         RetryPolicy.isRetryable(429) shouldBe true
@@ -58,10 +57,11 @@ class RetryPolicyTest {
     fun `withRetry succeeds on first try`() = runTest {
         val config = RetryConfig(maxRetries = 3, initialDelayMs = 10)
         var callCount = 0
-        val result = RetryPolicy.withRetry(config) {
-            callCount++
-            "success"
-        }
+        val result =
+            RetryPolicy.withRetry(config) {
+                callCount++
+                "success"
+            }
         result shouldBe "success"
         callCount shouldBe 1
     }
@@ -70,11 +70,12 @@ class RetryPolicyTest {
     fun `withRetry retries on retryable error`() = runTest {
         val config = RetryConfig(maxRetries = 3, initialDelayMs = 10, maxDelayMs = 50)
         var callCount = 0
-        val result = RetryPolicy.withRetry(config) {
-            callCount++
-            if (callCount < 3) throw ApiException("server error", statusCode = 500)
-            "success"
-        }
+        val result =
+            RetryPolicy.withRetry(config) {
+                callCount++
+                if (callCount < 3) throw ApiException("server error", statusCode = 500)
+                "success"
+            }
         result shouldBe "success"
         callCount shouldBe 3
     }

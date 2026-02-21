@@ -13,13 +13,9 @@ import com.aptos.core.types.TypeTag
  * Most user transactions use [EntryFunction] payloads.
  */
 sealed class TransactionPayload : BcsSerializable {
-
     /** A Move script payload with bytecode, type arguments, and script arguments. */
-    data class Script(
-        val code: ByteArray,
-        val typeArgs: List<TypeTag>,
-        val args: List<ByteArray>,
-    ) : TransactionPayload() {
+    data class Script(val code: ByteArray, val typeArgs: List<TypeTag>, val args: List<ByteArray>) :
+        TransactionPayload() {
         override fun serialize(serializer: BcsSerializer) {
             serializer.serializeVariantIndex(0u)
             serializer.serializeBytes(code)
@@ -32,7 +28,8 @@ sealed class TransactionPayload : BcsSerializable {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other !is Script) return false
-            return code.contentEquals(other.code) && typeArgs == other.typeArgs &&
+            return code.contentEquals(other.code) &&
+                typeArgs == other.typeArgs &&
                 args.size == other.args.size &&
                 args.zip(other.args).all { (a, b) -> a.contentEquals(b) }
         }
@@ -84,11 +81,7 @@ sealed class TransactionPayload : BcsSerializable {
 
             /** Creates an `0x1::coin::transfer` payload for typed coin transfers. */
             @JvmStatic
-            fun coinTransfer(
-                coinType: TypeTag,
-                to: AccountAddress,
-                amount: ULong,
-            ): EntryFunction {
+            fun coinTransfer(coinType: TypeTag, to: AccountAddress, amount: ULong): EntryFunction {
                 val amountSerializer = BcsSerializer()
                 amountSerializer.serializeU64(amount)
 
@@ -106,10 +99,8 @@ sealed class TransactionPayload : BcsSerializable {
     }
 
     /** A multisig transaction payload wrapping an optional entry function. */
-    data class Multisig(
-        val multisigAddress: AccountAddress,
-        val entryFunction: EntryFunction?,
-    ) : TransactionPayload() {
+    data class Multisig(val multisigAddress: AccountAddress, val entryFunction: EntryFunction?) :
+        TransactionPayload() {
         override fun serialize(serializer: BcsSerializer) {
             serializer.serializeVariantIndex(3u)
             multisigAddress.serialize(serializer)

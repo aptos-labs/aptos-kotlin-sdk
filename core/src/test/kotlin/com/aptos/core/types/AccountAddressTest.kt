@@ -11,7 +11,6 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 
 class AccountAddressTest {
-
     @Test
     fun `parse full hex address`() {
         val hex = "0x0000000000000000000000000000000000000000000000000000000000000001"
@@ -113,7 +112,7 @@ class AccountAddressTest {
     fun `isValid returns true for valid`() {
         AccountAddress.isValid("0x1") shouldBe true
         AccountAddress.isValid(
-            "0x0000000000000000000000000000000000000000000000000000000000000001"
+            "0x0000000000000000000000000000000000000000000000000000000000000001",
         ) shouldBe true
     }
 

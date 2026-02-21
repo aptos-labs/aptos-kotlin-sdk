@@ -12,7 +12,8 @@ enum class ErrorCategory(val code: Int, val description: String) {
     INTERNAL(9, "Internal error"),
     NOT_IMPLEMENTED(10, "Feature not implemented"),
     UNAVAILABLE(11, "Service temporarily unavailable"),
-    PERMISSION_DENIED(12, "Insufficient permissions");
+    PERMISSION_DENIED(12, "Insufficient permissions"),
+    ;
 
     companion object {
         @JvmStatic

@@ -7,11 +7,8 @@ import com.aptos.core.crypto.Hashing
 /**
  * A signed transaction ready for submission to the Aptos blockchain.
  */
-data class SignedTransaction(
-    val rawTransaction: RawTransaction,
-    val authenticator: TransactionAuthenticator,
-) : BcsSerializable {
-
+data class SignedTransaction(val rawTransaction: RawTransaction, val authenticator: TransactionAuthenticator) :
+    BcsSerializable {
     override fun serialize(serializer: BcsSerializer) {
         rawTransaction.serialize(serializer)
         authenticator.serialize(serializer)
@@ -36,7 +33,9 @@ data class SignedTransaction(
         serialize(serializer)
         val payload = serializer.toByteArray()
 
-        val digest = org.bouncycastle.jcajce.provider.digest.SHA3.Digest256()
+        val digest =
+            org.bouncycastle.jcajce.provider.digest.SHA3
+                .Digest256()
         digest.update(Hashing.TRANSACTION_PREFIX)
         digest.update(payload)
         return digest.digest()

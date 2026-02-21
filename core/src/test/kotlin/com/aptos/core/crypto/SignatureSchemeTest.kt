@@ -4,7 +4,6 @@ import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 
 class SignatureSchemeTest {
-
     @Test
     fun `ED25519 has id 0x00`() {
         SignatureScheme.ED25519.id shouldBe 0x00.toByte()

@@ -26,10 +26,7 @@ data class AccountInfo(
 
 /** A typed resource stored at an account address. */
 @Serializable
-data class AccountResource(
-    val type: String,
-    val data: kotlinx.serialization.json.JsonObject,
-)
+data class AccountResource(val type: String, val data: kotlinx.serialization.json.JsonObject)
 
 /** Response from transaction query endpoints (may represent pending or committed transactions). */
 @Serializable

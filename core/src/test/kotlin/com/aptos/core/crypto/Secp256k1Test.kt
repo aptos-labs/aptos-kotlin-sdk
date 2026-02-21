@@ -1,11 +1,9 @@
 package com.aptos.core.crypto
 
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
 import org.junit.jupiter.api.Test
 
 class Secp256k1Test {
-
     @Test
     fun `generate key pair`() {
         val privateKey = Secp256k1.PrivateKey.generate()
@@ -73,7 +71,10 @@ class Secp256k1Test {
             val message = "message $i".toByteArray()
             val signature = privateKey.sign(message)
             val s = java.math.BigInteger(1, signature.data.copyOfRange(32, 64))
-            val curveOrder = org.bouncycastle.crypto.ec.CustomNamedCurves.getByName("secp256k1").n
+            val curveOrder =
+                org.bouncycastle.crypto.ec.CustomNamedCurves
+                    .getByName("secp256k1")
+                    .n
             val halfN = curveOrder.shiftRight(1)
             (s <= halfN) shouldBe true
         }

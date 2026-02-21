@@ -11,7 +11,6 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 
 class TypeTagTest {
-
     @ParameterizedTest
     @CsvSource(
         "bool, bool",
@@ -100,10 +99,18 @@ class TypeTagTest {
 
     @Test
     fun `toString roundtrip for primitives`() {
-        val primitives = listOf(
-            TypeTag.Bool, TypeTag.U8, TypeTag.U16, TypeTag.U32, TypeTag.U64,
-            TypeTag.U128, TypeTag.U256, TypeTag.Address, TypeTag.Signer,
-        )
+        val primitives =
+            listOf(
+                TypeTag.Bool,
+                TypeTag.U8,
+                TypeTag.U16,
+                TypeTag.U32,
+                TypeTag.U64,
+                TypeTag.U128,
+                TypeTag.U256,
+                TypeTag.Address,
+                TypeTag.Signer,
+            )
         for (p in primitives) {
             TypeTag.fromString(p.toString()).toString() shouldBe p.toString()
         }
@@ -111,10 +118,18 @@ class TypeTagTest {
 
     @Test
     fun `BCS roundtrip for primitive types`() {
-        val types = listOf(
-            TypeTag.Bool, TypeTag.U8, TypeTag.U16, TypeTag.U32, TypeTag.U64,
-            TypeTag.U128, TypeTag.U256, TypeTag.Address, TypeTag.Signer,
-        )
+        val types =
+            listOf(
+                TypeTag.Bool,
+                TypeTag.U8,
+                TypeTag.U16,
+                TypeTag.U32,
+                TypeTag.U64,
+                TypeTag.U128,
+                TypeTag.U256,
+                TypeTag.Address,
+                TypeTag.Signer,
+            )
         for (tag in types) {
             val s = BcsSerializer()
             tag.serialize(s)

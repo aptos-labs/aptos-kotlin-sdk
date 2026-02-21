@@ -19,10 +19,7 @@ import kotlinx.coroutines.runBlocking
  *
  * @throws ApiException at construction time if [AptosConfig.faucetUrl] is not configured
  */
-class FaucetClient(
-    val config: AptosConfig,
-    engine: HttpClientEngine? = null,
-) {
+class FaucetClient(val config: AptosConfig, engine: HttpClientEngine? = null) {
     private val httpClient: HttpClient = HttpClient(engine ?: CIO.create()) {
         install(HttpTimeout) {
             requestTimeoutMillis = config.timeoutMs

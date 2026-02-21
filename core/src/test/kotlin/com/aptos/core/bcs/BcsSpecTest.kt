@@ -19,7 +19,6 @@ import java.util.stream.Stream
  * See: https://github.com/aptos-foundation/aptos-sdk-specs
  */
 class BcsSpecTest {
-
     // ---------------------------------------------------------------
     // ULEB128 test vectors from the spec
     //
@@ -634,7 +633,6 @@ class BcsSpecTest {
     // ---------------------------------------------------------------
 
     companion object {
-
         /**
          * ULEB128 test vectors from the aptos-sdk-specs.
          *
@@ -692,8 +690,14 @@ class BcsSpecTest {
             Arguments.of(
                 "123456789abcdef0",
                 byteArrayOf(
-                    0xf0.toByte(), 0xde.toByte(), 0xbc.toByte(), 0x9a.toByte(),
-                    0x78, 0x56, 0x34, 0x12,
+                    0xf0.toByte(),
+                    0xde.toByte(),
+                    0xbc.toByte(),
+                    0x9a.toByte(),
+                    0x78,
+                    0x56,
+                    0x34,
+                    0x12,
                 ),
             ),
             Arguments.of(
@@ -711,8 +715,22 @@ class BcsSpecTest {
             Arguments.of(
                 BigInteger("000102030405060708090A0B0C0D0E0F", 16),
                 byteArrayOf(
-                    0x0F, 0x0E, 0x0D, 0x0C, 0x0B, 0x0A, 0x09, 0x08,
-                    0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, 0x00,
+                    0x0F,
+                    0x0E,
+                    0x0D,
+                    0x0C,
+                    0x0B,
+                    0x0A,
+                    0x09,
+                    0x08,
+                    0x07,
+                    0x06,
+                    0x05,
+                    0x04,
+                    0x03,
+                    0x02,
+                    0x01,
+                    0x00,
                 ),
             ),
             // Zero
@@ -737,10 +755,38 @@ class BcsSpecTest {
             Arguments.of(
                 BigInteger("000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F", 16),
                 byteArrayOf(
-                    0x1F, 0x1E, 0x1D, 0x1C, 0x1B, 0x1A, 0x19, 0x18,
-                    0x17, 0x16, 0x15, 0x14, 0x13, 0x12, 0x11, 0x10,
-                    0x0F, 0x0E, 0x0D, 0x0C, 0x0B, 0x0A, 0x09, 0x08,
-                    0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, 0x00,
+                    0x1F,
+                    0x1E,
+                    0x1D,
+                    0x1C,
+                    0x1B,
+                    0x1A,
+                    0x19,
+                    0x18,
+                    0x17,
+                    0x16,
+                    0x15,
+                    0x14,
+                    0x13,
+                    0x12,
+                    0x11,
+                    0x10,
+                    0x0F,
+                    0x0E,
+                    0x0D,
+                    0x0C,
+                    0x0B,
+                    0x0A,
+                    0x09,
+                    0x08,
+                    0x07,
+                    0x06,
+                    0x05,
+                    0x04,
+                    0x03,
+                    0x02,
+                    0x01,
+                    0x00,
                 ),
             ),
             // Zero
@@ -766,8 +812,11 @@ class BcsSpecTest {
                 "hello",
                 byteArrayOf(
                     0x05,
-                    'h'.code.toByte(), 'e'.code.toByte(), 'l'.code.toByte(),
-                    'l'.code.toByte(), 'o'.code.toByte(),
+                    'h'.code.toByte(),
+                    'e'.code.toByte(),
+                    'l'.code.toByte(),
+                    'l'.code.toByte(),
+                    'o'.code.toByte(),
                 ),
             ),
             // "" -> [0x00]
@@ -782,8 +831,11 @@ class BcsSpecTest {
                 byteArrayOf(
                     0x06,
                     'h'.code.toByte(),
-                    0xC3.toByte(), 0xA9.toByte(), // e-acute in UTF-8
-                    'l'.code.toByte(), 'l'.code.toByte(), 'o'.code.toByte(),
+                    0xC3.toByte(),
+                    0xA9.toByte(), // e-acute in UTF-8
+                    'l'.code.toByte(),
+                    'l'.code.toByte(),
+                    'o'.code.toByte(),
                 ),
             ),
         )

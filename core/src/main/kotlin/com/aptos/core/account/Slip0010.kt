@@ -9,7 +9,6 @@ import javax.crypto.spec.SecretKeySpec
  * Uses HMAC-SHA512 chain derivation as specified in SLIP-0010.
  */
 object Slip0010 {
-
     private const val ED25519_SEED = "ed25519 seed"
 
     @JvmStatic
