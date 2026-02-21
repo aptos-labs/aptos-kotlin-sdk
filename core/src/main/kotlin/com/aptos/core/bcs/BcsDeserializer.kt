@@ -136,9 +136,7 @@ class BcsDeserializer(private val input: ByteArray) {
     }
 
     companion object {
-        fun littleEndianToBigInt(bytes: ByteArray): BigInteger {
-            return littleEndianToBigInt(bytes, 0, bytes.size)
-        }
+        fun littleEndianToBigInt(bytes: ByteArray): BigInteger = littleEndianToBigInt(bytes, 0, bytes.size)
 
         fun littleEndianToBigInt(bytes: ByteArray, start: Int, length: Int): BigInteger {
             // Reverse to big-endian and prepend 0x00 to ensure positive interpretation
