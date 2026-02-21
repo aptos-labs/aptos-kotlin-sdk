@@ -2,8 +2,6 @@ package com.aptos.core.bcs
 
 import com.aptos.core.error.BcsDeserializationException
 import java.math.BigInteger
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 
 /**
  * BCS (Binary Canonical Serialization) deserializer.
@@ -33,40 +31,45 @@ class BcsDeserializer(private val input: ByteArray) {
     fun deserializeU8(): UByte = readByte().toUByte()
 
     fun deserializeU16(): UShort {
-        val bytes = readBytes(2)
-        return ByteBuffer
-            .wrap(bytes)
-            .order(ByteOrder.LITTLE_ENDIAN)
-            .short
-            .toUShort()
+        ensureRemaining(2)
+        val b0 = input[offset].toInt() and 0xFF
+        val b1 = input[offset + 1].toInt() and 0xFF
+        offset += 2
+        return ((b1 shl 8) or b0).toUShort()
     }
 
     fun deserializeU32(): UInt {
-        val bytes = readBytes(4)
-        return ByteBuffer
-            .wrap(bytes)
-            .order(ByteOrder.LITTLE_ENDIAN)
-            .int
-            .toUInt()
+        ensureRemaining(4)
+        val b0 = input[offset].toLong() and 0xFF
+        val b1 = input[offset + 1].toLong() and 0xFF
+        val b2 = input[offset + 2].toLong() and 0xFF
+        val b3 = input[offset + 3].toLong() and 0xFF
+        offset += 4
+        return (b0 or (b1 shl 8) or (b2 shl 16) or (b3 shl 24)).toUInt()
     }
 
     fun deserializeU64(): ULong {
-        val bytes = readBytes(8)
-        return ByteBuffer
-            .wrap(bytes)
-            .order(ByteOrder.LITTLE_ENDIAN)
-            .long
-            .toULong()
+        ensureRemaining(8)
+        var value = 0uL
+        for (i in 0 until 8) {
+            value = value or ((input[offset + i].toULong() and 0xFFuL) shl (8 * i))
+        }
+        offset += 8
+        return value
     }
 
     fun deserializeU128(): BigInteger {
-        val bytes = readBytes(16)
-        return littleEndianToBigInt(bytes)
+        ensureRemaining(16)
+        val value = littleEndianToBigInt(input, offset, 16)
+        offset += 16
+        return value
     }
 
     fun deserializeU256(): BigInteger {
-        val bytes = readBytes(32)
-        return littleEndianToBigInt(bytes)
+        ensureRemaining(32)
+        val value = littleEndianToBigInt(input, offset, 32)
+        offset += 32
+        return value
     }
 
     /** Deserializes a variable-length byte array (ULEB128 length prefix followed by bytes). */
@@ -106,32 +109,43 @@ class BcsDeserializer(private val input: ByteArray) {
     fun deserializeOptionTag(): Boolean = deserializeBool()
 
     private fun readByte(): Byte {
-        if (offset >= input.size) {
-            throw BcsDeserializationException(
-                "Unexpected end of input at offset $offset (input length: ${input.size})",
-            )
-        }
+        ensureRemaining(1)
         return input[offset++]
     }
 
     private fun readBytes(count: Int): ByteArray {
-        if (offset + count > input.size) {
-            throw BcsDeserializationException(
-                "Unexpected end of input: need $count bytes at offset $offset (input length: ${input.size})",
-            )
+        if (count < 0) {
+            throw BcsDeserializationException("Negative byte count: $count")
         }
-        val result = input.copyOfRange(offset, offset + count)
+        ensureRemaining(count)
+        val result = ByteArray(count)
+        System.arraycopy(input, offset, result, 0, count)
         offset += count
         return result
     }
 
+    private fun ensureRemaining(count: Int) {
+        if (count < 0) {
+            throw BcsDeserializationException("Negative byte count: $count")
+        }
+        if (count > remaining) {
+            throw BcsDeserializationException(
+                "Unexpected end of input: need $count bytes at offset $offset (input length: ${input.size})",
+            )
+        }
+    }
+
     companion object {
         fun littleEndianToBigInt(bytes: ByteArray): BigInteger {
+            return littleEndianToBigInt(bytes, 0, bytes.size)
+        }
+
+        fun littleEndianToBigInt(bytes: ByteArray, start: Int, length: Int): BigInteger {
             // Reverse to big-endian and prepend 0x00 to ensure positive interpretation
-            val bigEndian = ByteArray(bytes.size + 1)
+            val bigEndian = ByteArray(length + 1)
             bigEndian[0] = 0
-            for (i in bytes.indices) {
-                bigEndian[bytes.size - i] = bytes[i]
+            for (i in 0 until length) {
+                bigEndian[length - i] = bytes[start + i]
             }
             return BigInteger(bigEndian)
         }

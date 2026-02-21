@@ -93,6 +93,17 @@ class AptosRestClient(val config: AptosConfig, engine: HttpClientEngine? = null)
         response.body()
     }
 
+    suspend fun getTransactionByVersion(version: ULong): TransactionResponse = retryable {
+        val response = httpClient.get("$baseUrl/transactions/by_version/$version")
+        handleResponse(response)
+        response.body()
+    }
+
+    @JvmName("getTransactionByVersionSync")
+    fun getTransactionByVersionBlocking(version: ULong): TransactionResponse = runBlocking {
+        getTransactionByVersion(version)
+    }
+
     /** Submits a BCS-encoded signed transaction and returns the pending transaction info. */
     suspend fun submitTransaction(signedTxn: SignedTransaction): PendingTransaction = retryable {
         val bcsBytes = signedTxn.toSubmitBytes()
@@ -124,11 +135,15 @@ class AptosRestClient(val config: AptosConfig, engine: HttpClientEngine? = null)
     }
 
     private suspend fun pollTransaction(hash: String): TransactionResponse? {
-        val txn = try {
-            getTransactionByHash(hash)
-        } catch (_: ApiException) {
-            return null // Transaction not found yet
-        }
+        val txn =
+            try {
+                getTransactionByHash(hash)
+            } catch (e: ApiException) {
+                return when (e.statusCode) {
+                    404, 429 -> null // Not found yet / currently rate limited
+                    else -> throw e
+                }
+            }
         if (txn.type == "pending_transaction") return null
         if (txn.success == true) return txn
         throw ApiException("Transaction failed: ${txn.vmStatus}", errorCode = txn.vmStatus)

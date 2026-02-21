@@ -3,8 +3,6 @@ package com.aptos.core.bcs
 import com.aptos.core.error.BcsSerializationException
 import java.io.ByteArrayOutputStream
 import java.math.BigInteger
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 
 /**
  * BCS (Binary Canonical Serialization) serializer.
@@ -40,21 +38,27 @@ class BcsSerializer(initialCapacity: Int = 256) {
     }
 
     fun serializeU16(value: UShort) {
-        val buf = ByteBuffer.allocate(2).order(ByteOrder.LITTLE_ENDIAN)
-        buf.putShort(value.toShort())
-        output.write(buf.array())
+        val v = value.toInt()
+        output.write(v and 0xFF)
+        output.write((v ushr 8) and 0xFF)
     }
 
     fun serializeU32(value: UInt) {
-        val buf = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN)
-        buf.putInt(value.toInt())
-        output.write(buf.array())
+        output.write((value and 0xFFu).toInt())
+        output.write(((value shr 8) and 0xFFu).toInt())
+        output.write(((value shr 16) and 0xFFu).toInt())
+        output.write(((value shr 24) and 0xFFu).toInt())
     }
 
     fun serializeU64(value: ULong) {
-        val buf = ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN)
-        buf.putLong(value.toLong())
-        output.write(buf.array())
+        output.write((value and 0xFFuL).toInt())
+        output.write(((value shr 8) and 0xFFuL).toInt())
+        output.write(((value shr 16) and 0xFFuL).toInt())
+        output.write(((value shr 24) and 0xFFuL).toInt())
+        output.write(((value shr 32) and 0xFFuL).toInt())
+        output.write(((value shr 40) and 0xFFuL).toInt())
+        output.write(((value shr 48) and 0xFFuL).toInt())
+        output.write(((value shr 56) and 0xFFuL).toInt())
     }
 
     /** Serializes a 128-bit unsigned integer in little-endian byte order (16 bytes). */
@@ -89,9 +93,9 @@ class BcsSerializer(initialCapacity: Int = 256) {
 
     /** Encodes an unsigned 32-bit integer using ULEB128 variable-length encoding. */
     fun serializeUleb128(value: UInt) {
-        var remaining = value.toInt()
+        var remaining = value.toLong() and 0xFFFF_FFFFL
         while (true) {
-            var byte = remaining and 0x7F
+            var byte = (remaining and 0x7F).toInt()
             remaining = remaining ushr 7
             if (remaining != 0) {
                 byte = byte or 0x80
@@ -103,6 +107,7 @@ class BcsSerializer(initialCapacity: Int = 256) {
 
     /** Serializes a sequence (vector) length as ULEB128. */
     fun serializeSequenceLength(length: Int) {
+        require(length >= 0) { "Sequence length must be non-negative: $length" }
         serializeUleb128(length.toUInt())
     }
 

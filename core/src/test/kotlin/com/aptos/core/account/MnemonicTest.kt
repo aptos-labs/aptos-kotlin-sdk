@@ -43,6 +43,15 @@ class MnemonicTest {
     }
 
     @Test
+    fun `from phrase rejects wrong checksum`() {
+        shouldThrow<MnemonicException> {
+            Mnemonic.fromPhrase(
+                "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon",
+            )
+        }
+    }
+
+    @Test
     fun `toSeed produces 64-byte seed`() {
         val mnemonic =
             Mnemonic.fromPhrase(

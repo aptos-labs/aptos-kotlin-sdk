@@ -52,7 +52,7 @@ data class AuthenticationKey(val data: ByteArray) {
         /** Derives the authentication key for a Secp256k1 public key (scheme id 0x01). */
         @JvmStatic
         fun fromSecp256k1(publicKey: Secp256k1.PublicKey): AuthenticationKey =
-            fromPublicKey(publicKey.data, SignatureScheme.SECP256K1)
+            fromPublicKey(publicKey.uncompressed(), SignatureScheme.SECP256K1)
 
         /** Derives the authentication key for a MultiEd25519 public key: SHA3-256(pk1||...||pkN||threshold||0x01). */
         @JvmStatic

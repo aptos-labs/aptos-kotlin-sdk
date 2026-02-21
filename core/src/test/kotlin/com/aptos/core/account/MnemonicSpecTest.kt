@@ -136,6 +136,15 @@ class MnemonicSpecTest {
     }
 
     @Test
+    fun `wrong checksum mnemonic is rejected`() {
+        shouldThrow<MnemonicException> {
+            Mnemonic.fromPhrase(
+                "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon",
+            )
+        }
+    }
+
+    @Test
     fun `isValid returns false for invalid word`() {
         Mnemonic.isValid(
             "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon xyz",

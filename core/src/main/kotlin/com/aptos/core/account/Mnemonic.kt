@@ -1,5 +1,6 @@
 package com.aptos.core.account
 
+import com.aptos.core.crypto.Hashing
 import com.aptos.core.error.MnemonicException
 import java.security.SecureRandom
 import javax.crypto.SecretKeyFactory
@@ -24,11 +25,16 @@ class Mnemonic private constructor(val words: List<String>) {
      * @return the 64-byte seed suitable for key derivation
      */
     fun toSeed(passphrase: String = ""): ByteArray {
-        val mnemonic = phrase().toCharArray()
+        val mnemonicChars = phrase().toCharArray()
         val salt = "mnemonic$passphrase".toByteArray(Charsets.UTF_8)
-        val spec = PBEKeySpec(mnemonic, salt, PBKDF2_ITERATIONS, SEED_LENGTH_BITS)
-        val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA512")
-        return factory.generateSecret(spec).encoded
+        val spec = PBEKeySpec(mnemonicChars, salt, PBKDF2_ITERATIONS, SEED_LENGTH_BITS)
+        return try {
+            val factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA512")
+            factory.generateSecret(spec).encoded
+        } finally {
+            spec.clearPassword()
+            mnemonicChars.fill('\u0000')
+        }
     }
 
     fun wordCount(): Int = words.size
@@ -81,11 +87,8 @@ class Mnemonic private constructor(val words: List<String>) {
         /** Creates a mnemonic from raw entropy bytes with SHA-256 checksum. */
         @JvmStatic
         fun fromEntropy(entropy: ByteArray): Mnemonic {
-            val wordList = BIP39_ENGLISH_WORDLIST
             val checksumBits = entropy.size / 4
-            val hash =
-                com.aptos.core.crypto.Hashing
-                    .sha256(entropy)
+            val hash = Hashing.sha256(entropy)
 
             // Convert entropy + checksum to bit string
             val bits = StringBuilder()
@@ -100,7 +103,7 @@ class Mnemonic private constructor(val words: List<String>) {
             val words = mutableListOf<String>()
             for (i in 0 until bits.length / 11) {
                 val index = bits.substring(i * 11, (i + 1) * 11).toInt(2)
-                words.add(wordList[index])
+                words.add(WORD_LIST[index])
             }
 
             return Mnemonic(words)
@@ -111,13 +114,12 @@ class Mnemonic private constructor(val words: List<String>) {
             if (words.size !in setOf(12, 15, 18, 21, 24)) {
                 throw MnemonicException("Invalid word count: ${words.size}. Must be 12, 15, 18, 21, or 24")
             }
-            val wordList = BIP39_ENGLISH_WORDLIST
-            val wordSet = wordList.toSet()
-            for (word in words) {
-                if (word !in wordSet) {
-                    throw MnemonicException("Invalid mnemonic word: '$word'")
-                }
+            val indices = IntArray(words.size)
+            words.forEachIndexed { i, word ->
+                val index = WORD_INDEX[word] ?: throw MnemonicException("Invalid mnemonic word: '$word'")
+                indices[i] = index
             }
+            validateChecksum(indices)
         }
 
         /** Returns `true` if [phrase] is a valid BIP-39 mnemonic. */
@@ -127,6 +129,42 @@ class Mnemonic private constructor(val words: List<String>) {
             true
         } catch (_: MnemonicException) {
             false
+        }
+
+        private val WORD_LIST = BIP39_ENGLISH_WORDLIST
+        private val WORD_INDEX = WORD_LIST.withIndex().associate { it.value to it.index }
+
+        private fun validateChecksum(indices: IntArray) {
+            val totalBits = indices.size * 11
+            val entropyBits = totalBits * 32 / 33
+            val checksumBits = totalBits - entropyBits
+            val entropy = ByteArray(entropyBits / 8)
+
+            // First ENT bits of the 11-bit word indices encode entropy.
+            var bitPos = 0
+            for (index in indices) {
+                for (bit in 10 downTo 0) {
+                    val value = (index shr bit) and 1
+                    if (bitPos < entropyBits && value == 1) {
+                        val byteIndex = bitPos / 8
+                        val bitInByte = 7 - (bitPos % 8)
+                        entropy[byteIndex] = (entropy[byteIndex].toInt() or (1 shl bitInByte)).toByte()
+                    }
+                    bitPos++
+                }
+            }
+
+            val hash = Hashing.sha256(entropy)
+            for (i in 0 until checksumBits) {
+                val expected = (hash[i / 8].toInt() shr (7 - (i % 8))) and 1
+                val checksumBitPos = entropyBits + i
+                val wordIndex = checksumBitPos / 11
+                val bitInWord = 10 - (checksumBitPos % 11)
+                val actual = (indices[wordIndex] shr bitInWord) and 1
+                if (actual != expected) {
+                    throw MnemonicException("Invalid mnemonic checksum")
+                }
+            }
         }
     }
 }

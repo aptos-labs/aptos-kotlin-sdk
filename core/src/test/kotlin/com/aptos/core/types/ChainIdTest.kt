@@ -17,6 +17,11 @@ class ChainIdTest {
     }
 
     @Test
+    fun `DEVNET constant`() {
+        ChainId.DEVNET.value shouldBe 3u.toUByte()
+    }
+
+    @Test
     fun `LOCAL constant`() {
         ChainId.LOCAL.value shouldBe 4u.toUByte()
     }
@@ -40,6 +45,7 @@ class ChainIdTest {
     fun `toString returns numeric value`() {
         ChainId.MAINNET.toString() shouldBe "1"
         ChainId.TESTNET.toString() shouldBe "2"
+        ChainId.DEVNET.toString() shouldBe "3"
     }
 
     @Test

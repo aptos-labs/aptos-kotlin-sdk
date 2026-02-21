@@ -154,6 +154,14 @@ class Aptos private constructor(
 
     suspend fun getTransactionByHash(hash: String): TransactionResponse = restClient.getTransactionByHash(hash)
 
+    suspend fun getTransactionByVersion(version: ULong): TransactionResponse =
+        restClient.getTransactionByVersion(version)
+
+    @JvmName("getTransactionByVersionSync")
+    fun getTransactionByVersionBlocking(version: ULong): TransactionResponse = runBlocking {
+        getTransactionByVersion(version)
+    }
+
     // --- View ---
 
     suspend fun view(

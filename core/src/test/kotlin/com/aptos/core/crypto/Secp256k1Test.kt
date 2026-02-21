@@ -1,5 +1,6 @@
 package com.aptos.core.crypto
 
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 
@@ -87,5 +88,25 @@ class Secp256k1Test {
         val sig1 = privateKey.sign(message)
         val sig2 = privateKey.sign(message)
         sig1 shouldBe sig2
+    }
+
+    @Test
+    fun `reject zero private key`() {
+        shouldThrow<IllegalArgumentException> {
+            Secp256k1.PrivateKey(ByteArray(32))
+        }
+    }
+
+    @Test
+    fun `reject private key equal to curve order`() {
+        val n = org.bouncycastle.crypto.ec.CustomNamedCurves.getByName("secp256k1").n
+        val nBytes =
+            n.toByteArray().let {
+                if (it.size == 33 && it[0] == 0.toByte()) it.copyOfRange(1, 33) else it
+            }
+        nBytes.size shouldBe 32
+        shouldThrow<IllegalArgumentException> {
+            Secp256k1.PrivateKey(nBytes)
+        }
     }
 }

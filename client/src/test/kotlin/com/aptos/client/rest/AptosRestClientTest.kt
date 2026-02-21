@@ -135,6 +135,34 @@ class AptosRestClientTest {
     }
 
     @Test
+    fun `getTransactionByVersion success`() = runTest {
+        val engine = mockEngine {
+            respond(
+                content = ByteReadChannel(
+                    """
+                    {
+                        "type": "user_transaction",
+                        "hash": "0xabc999",
+                        "sender": "0x1",
+                        "sequence_number": "6",
+                        "success": true,
+                        "vm_status": "Executed successfully"
+                    }
+                    """.trimIndent(),
+                ),
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, "application/json"),
+            )
+        }
+
+        val client = AptosRestClient(testConfig(), engine)
+        val txn = client.getTransactionByVersion(123uL)
+        txn.hash shouldBe "0xabc999"
+        txn.success shouldBe true
+        client.close()
+    }
+
+    @Test
     fun `estimateGasPrice success`() = runTest {
         val engine = mockEngine {
             respond(
@@ -286,6 +314,96 @@ class AptosRestClientTest {
         val client = AptosRestClient(testConfig(), engine)
         val balance = client.getBalance(AccountAddress.ONE)
         balance shouldBe 500_000_000uL
+        client.close()
+    }
+
+    @Test
+    fun `waitForTransaction retries on 404 and succeeds when committed`() = runTest {
+        var callCount = 0
+        val engine = mockEngine {
+            callCount++
+            if (callCount <= 2) {
+                respond(
+                    content = ByteReadChannel("""{"message":"not found","error_code":"transaction_not_found"}"""),
+                    status = HttpStatusCode.NotFound,
+                    headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                )
+            } else {
+                respond(
+                    content = ByteReadChannel(
+                        """
+                        {
+                            "type": "user_transaction",
+                            "hash": "0xfinal",
+                            "success": true,
+                            "vm_status": "Executed successfully"
+                        }
+                        """.trimIndent(),
+                    ),
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                )
+            }
+        }
+
+        val client = AptosRestClient(testConfig(), engine)
+        val txn = client.waitForTransaction("0xfinal", timeoutMs = 300, pollIntervalMs = 10)
+        txn.hash shouldBe "0xfinal"
+        callCount shouldBe 3
+        client.close()
+    }
+
+    @Test
+    fun `waitForTransaction treats 429 as not found yet`() = runTest {
+        var callCount = 0
+        val engine = mockEngine {
+            callCount++
+            if (callCount == 1) {
+                respond(
+                    content = ByteReadChannel("""{"message":"rate limited"}"""),
+                    status = HttpStatusCode.TooManyRequests,
+                    headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                )
+            } else {
+                respond(
+                    content = ByteReadChannel(
+                        """
+                        {
+                            "type": "user_transaction",
+                            "hash": "0x429ok",
+                            "success": true,
+                            "vm_status": "Executed successfully"
+                        }
+                        """.trimIndent(),
+                    ),
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                )
+            }
+        }
+
+        val client = AptosRestClient(testConfig(), engine)
+        val txn = client.waitForTransaction("0x429ok", timeoutMs = 300, pollIntervalMs = 10)
+        txn.hash shouldBe "0x429ok"
+        callCount shouldBe 2
+        client.close()
+    }
+
+    @Test
+    fun `waitForTransaction propagates non-retriable API errors`() = runTest {
+        val engine = mockEngine {
+            respond(
+                content = ByteReadChannel("""{"message":"boom"}"""),
+                status = HttpStatusCode.InternalServerError,
+                headers = headersOf(HttpHeaders.ContentType, "application/json"),
+            )
+        }
+
+        val client = AptosRestClient(testConfig(), engine)
+        val exception = shouldThrow<ApiException> {
+            client.waitForTransaction("0xfail", timeoutMs = 200, pollIntervalMs = 10)
+        }
+        exception.statusCode shouldBe 500
         client.close()
     }
 }

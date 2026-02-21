@@ -29,6 +29,11 @@ class TransactionSpecTest {
     }
 
     @Test
+    fun `devnet chain ID is 3`() {
+        ChainId.DEVNET.value shouldBe 3u.toUByte()
+    }
+
+    @Test
     fun `local chain ID is 4`() {
         ChainId.LOCAL.value shouldBe 4u.toUByte()
     }
