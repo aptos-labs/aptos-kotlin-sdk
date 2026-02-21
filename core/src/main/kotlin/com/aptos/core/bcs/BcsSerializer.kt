@@ -97,11 +97,11 @@ class BcsSerializer(initialCapacity: Int = 256) {
         while (true) {
             var byte = (remaining and 0x7F).toInt()
             remaining = remaining ushr 7
-            if (remaining != 0) {
+            if (remaining != 0L) {
                 byte = byte or 0x80
             }
             output.write(byte)
-            if (remaining == 0) break
+            if (remaining == 0L) break
         }
     }
 
