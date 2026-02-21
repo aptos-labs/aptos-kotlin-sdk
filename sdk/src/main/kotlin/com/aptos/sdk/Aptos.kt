@@ -53,10 +53,10 @@ class Aptos private constructor(
         faucetClient = if (config.faucetUrl != null) FaucetClient(config) else null,
     )
 
-    internal constructor(config: AptosConfig, engine: HttpClientEngine) : this(
+    constructor(config: AptosConfig, engine: HttpClientEngine) : this(
         config = config,
         restClient = AptosRestClient(config, engine),
-        faucetClient = null,
+        faucetClient = if (config.faucetUrl != null) FaucetClient(config, engine) else null,
     )
 
     // --- Account ---

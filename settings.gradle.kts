@@ -2,6 +2,7 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {
     repositories {
+        google()
         gradlePluginPortal()
         mavenCentral()
     }
@@ -14,3 +15,4 @@ include(":client")
 include(":sdk")
 include(":indexer")
 include(":benchmarks")
+include(":examples:android-wallet")
