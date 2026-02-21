@@ -14,7 +14,18 @@ import kotlinx.serialization.json.JsonArray
 
 /**
  * Main entry point for the Aptos Kotlin SDK.
+ *
  * Composes REST client, faucet client, and transaction utilities into a single facade.
+ * Use the static factories [testnet], [mainnet], [devnet], [localnet] for quick setup,
+ * or [builder] for custom configuration.
+ *
+ * All network methods are `suspend` functions. Java callers can use the `*Blocking` variants.
+ *
+ * ```kotlin
+ * val aptos = Aptos.testnet()
+ * val balance = aptos.getBalance(address)
+ * aptos.close()
+ * ```
  */
 class Aptos private constructor(
     val config: AptosConfig,
@@ -96,6 +107,12 @@ class Aptos private constructor(
 
     // --- High-Level Convenience ---
 
+    /**
+     * Builds and signs an APT transfer transaction.
+     *
+     * Automatically fetches the sender's sequence number and chain ID.
+     * The returned [SignedTransaction] can be submitted via [submitTransaction].
+     */
     suspend fun transfer(
         sender: Account,
         to: AccountAddress,
@@ -119,6 +136,7 @@ class Aptos private constructor(
         return TransactionBuilder.signTransaction(sender, rawTxn)
     }
 
+    /** Closes the underlying HTTP clients and releases resources. */
     fun close() {
         restClient.close()
         faucetClient?.close()

@@ -6,10 +6,13 @@ import com.aptos.core.crypto.Ed25519
 import com.aptos.core.crypto.Secp256k1
 
 /**
- * Sealed class for account-level authenticators.
+ * Sealed class for account-level authenticators used within transaction authenticators.
+ *
+ * BCS variant indices: Ed25519=0, SingleKey=2.
  */
 sealed class AccountAuthenticator : BcsSerializable {
 
+    /** Ed25519 account authenticator (variant index 0). */
     data class Ed25519Auth(
         val publicKey: Ed25519.PublicKey,
         val signature: Ed25519.Signature,
@@ -21,6 +24,7 @@ sealed class AccountAuthenticator : BcsSerializable {
         }
     }
 
+    /** SingleKey account authenticator for non-Ed25519 schemes (variant index 2). */
     data class SingleKey(
         val publicKeyType: UByte,
         val publicKeyBytes: ByteArray,
@@ -57,11 +61,13 @@ sealed class AccountAuthenticator : BcsSerializable {
 }
 
 /**
- * Sealed class for top-level transaction authenticators.
- * BCS variant indices: Ed25519=0x00, SingleSender=0x04
+ * Sealed class for top-level transaction authenticators attached to [SignedTransaction].
+ *
+ * BCS variant indices: Ed25519=0, SingleSender=4.
  */
 sealed class TransactionAuthenticator : BcsSerializable {
 
+    /** Ed25519 transaction authenticator (variant index 0) -- legacy format. */
     data class Ed25519Auth(
         val publicKey: Ed25519.PublicKey,
         val signature: Ed25519.Signature,
@@ -73,6 +79,7 @@ sealed class TransactionAuthenticator : BcsSerializable {
         }
     }
 
+    /** SingleSender transaction authenticator (variant index 4) -- used for all key types. */
     data class SingleSender(
         val accountAuthenticator: AccountAuthenticator,
     ) : TransactionAuthenticator() {

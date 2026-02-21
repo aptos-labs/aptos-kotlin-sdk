@@ -7,6 +7,11 @@ import com.aptos.core.types.AccountAddress
 
 /**
  * An Aptos account backed by an Ed25519 key pair.
+ *
+ * Use the companion object factories to create instances:
+ * - [generate] creates a new random account
+ * - [fromPrivateKey] / [fromPrivateKeyHex] restores from a known key
+ * - [fromMnemonic] derives from a BIP-39 mnemonic via SLIP-0010
  */
 class Ed25519Account private constructor(
     val privateKey: Ed25519.PrivateKey,
@@ -22,6 +27,7 @@ class Ed25519Account private constructor(
 
     override fun sign(message: ByteArray): ByteArray = privateKey.sign(message).data
 
+    /** Signs [message] and returns a typed [Ed25519.Signature] (rather than raw bytes). */
     fun signEd25519(message: ByteArray): Ed25519.Signature = privateKey.sign(message)
 
     companion object {
@@ -43,6 +49,11 @@ class Ed25519Account private constructor(
             return fromPrivateKey(Ed25519.PrivateKey.fromHex(hex))
         }
 
+        /**
+         * Derives an Ed25519 account from a BIP-39 [mnemonic] using SLIP-0010 derivation.
+         *
+         * @param path the derivation path (default: `m/44'/637'/0'/0'/0'`)
+         */
         @JvmStatic
         fun fromMnemonic(
             mnemonic: Mnemonic,

@@ -9,12 +9,18 @@ import java.nio.ByteOrder
  * BCS (Binary Canonical Serialization) deserializer.
  *
  * Decodes values from the BCS format used by the Aptos blockchain.
+ * Reads sequentially from the input byte array, advancing an internal offset.
+ * Check [remaining] to verify all bytes have been consumed after deserialization.
+ *
+ * @param input the BCS-encoded byte array to read from
  */
 class BcsDeserializer(private val input: ByteArray) {
     private var offset: Int = 0
 
+    /** The number of bytes remaining to be read. */
     val remaining: Int get() = input.size - offset
 
+    /** Deserializes a boolean from a single byte (`0x00` = false, `0x01` = true). */
     fun deserializeBool(): Boolean {
         val byte = readByte()
         return when (byte.toInt()) {
@@ -51,19 +57,23 @@ class BcsDeserializer(private val input: ByteArray) {
         return littleEndianToBigInt(bytes)
     }
 
+    /** Deserializes a variable-length byte array (ULEB128 length prefix followed by bytes). */
     fun deserializeBytes(): ByteArray {
         val length = deserializeUleb128()
         return readBytes(length.toInt())
     }
 
+    /** Deserializes a UTF-8 string (ULEB128 byte-length prefix followed by UTF-8 bytes). */
     fun deserializeString(): String {
         return deserializeBytes().toString(Charsets.UTF_8)
     }
 
+    /** Reads exactly [length] raw bytes without a length prefix. */
     fun deserializeFixedBytes(length: Int): ByteArray {
         return readBytes(length)
     }
 
+    /** Decodes a ULEB128-encoded unsigned 32-bit integer. */
     fun deserializeUleb128(): UInt {
         var value = 0L
         var shift = 0

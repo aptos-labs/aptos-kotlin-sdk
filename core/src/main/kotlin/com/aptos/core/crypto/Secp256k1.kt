@@ -19,6 +19,13 @@ import org.bouncycastle.math.ec.FixedPointCombMultiplier
 import java.math.BigInteger
 import java.security.SecureRandom
 
+/**
+ * Secp256k1 (ECDSA) cryptographic operations for the Aptos blockchain.
+ *
+ * Signing uses RFC 6979 deterministic nonce generation via Bouncy Castle's
+ * [HMacDSAKCalculator] and automatically applies low-S normalization.
+ * Verification rejects high-S signatures.
+ */
 object Secp256k1 {
 
     const val PRIVATE_KEY_LENGTH = 32
@@ -32,6 +39,11 @@ object Secp256k1 {
     )
     private val halfN = curveParams.n.shiftRight(1)
 
+    /**
+     * A Secp256k1 private key (32 bytes).
+     *
+     * @property data the raw 32-byte private key scalar
+     */
     data class PrivateKey(val data: ByteArray) {
         init {
             require(data.size == PRIVATE_KEY_LENGTH) {
@@ -39,12 +51,17 @@ object Secp256k1 {
             }
         }
 
+        /** Derives the corresponding uncompressed (65-byte) [PublicKey]. */
         fun publicKey(): PublicKey {
             val d = BigInteger(1, data)
             val q = FixedPointCombMultiplier().multiply(curveParams.g, d)
             return PublicKey(q.getEncoded(false))
         }
 
+        /**
+         * Signs the [message] with SHA-256 hashing and RFC 6979 deterministic nonce.
+         * The resulting signature has low-S normalization applied.
+         */
         fun sign(message: ByteArray): Signature {
             val hash = Hashing.sha256(message)
             val d = BigInteger(1, data)
@@ -89,6 +106,11 @@ object Secp256k1 {
         }
     }
 
+    /**
+     * A Secp256k1 public key in either compressed (33 bytes) or uncompressed (65 bytes) form.
+     *
+     * @property data the raw public key bytes
+     */
     data class PublicKey(val data: ByteArray) : BcsSerializable {
         init {
             require(
@@ -103,18 +125,26 @@ object Secp256k1 {
             serializer.serializeBytes(data)
         }
 
+        /** Returns the 33-byte SEC1 compressed encoding. */
         fun compressed(): ByteArray {
             if (data.size == PUBLIC_KEY_COMPRESSED_LENGTH) return data.copyOf()
             val point = curveParams.curve.decodePoint(data)
             return point.getEncoded(true)
         }
 
+        /** Returns the 65-byte SEC1 uncompressed encoding (0x04 || x || y). */
         fun uncompressed(): ByteArray {
             if (data.size == PUBLIC_KEY_UNCOMPRESSED_LENGTH) return data.copyOf()
             val point = curveParams.curve.decodePoint(data)
             return point.getEncoded(false)
         }
 
+        /**
+         * Verifies that [signature] is valid for the given [message].
+         * Rejects high-S signatures. The message is SHA-256 hashed internally.
+         *
+         * @throws CryptoException if verification encounters an error
+         */
         fun verify(message: ByteArray, signature: Signature): Boolean {
             return try {
                 val hash = Hashing.sha256(message)
@@ -147,6 +177,11 @@ object Secp256k1 {
         }
     }
 
+    /**
+     * A Secp256k1 ECDSA signature (64 bytes: 32-byte r || 32-byte s).
+     *
+     * @property data the raw 64-byte signature (r concatenated with s)
+     */
     data class Signature(val data: ByteArray) : BcsSerializable {
         init {
             require(data.size == SIGNATURE_LENGTH) {

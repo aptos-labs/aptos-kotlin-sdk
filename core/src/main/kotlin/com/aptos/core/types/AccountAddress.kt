@@ -7,6 +7,14 @@ import com.aptos.core.error.AccountAddressParseException
 
 /**
  * Represents a 32-byte Aptos account address.
+ *
+ * Addresses are always stored as exactly [LENGTH] (32) bytes internally.
+ * Short-form hex strings (e.g. `"0x1"`) are zero-padded on construction.
+ *
+ * Use [fromHex] for strict parsing (only allows short form for special addresses 0x0-0xf)
+ * or [fromHexRelaxed] for lenient parsing (zero-pads any length).
+ *
+ * @property data the raw 32-byte address
  */
 data class AccountAddress(val data: ByteArray) : BcsSerializable, Comparable<AccountAddress> {
 
@@ -20,8 +28,10 @@ data class AccountAddress(val data: ByteArray) : BcsSerializable, Comparable<Acc
         serializer.serializeFixedBytes(data)
     }
 
+    /** Returns the full 66-character hex representation (0x + 64 hex chars). */
     fun toHex(): String = "0x${HexString.encode(data)}"
 
+    /** Returns the shortest hex representation with leading zeros trimmed (e.g. `"0x1"`). */
     fun toShortString(): String {
         val hex = HexString.encode(data)
         val trimmed = hex.trimStart('0')
@@ -61,6 +71,16 @@ data class AccountAddress(val data: ByteArray) : BcsSerializable, Comparable<Acc
         @JvmStatic
         val FOUR = fromHexRelaxed("0x4")
 
+        /**
+         * Parses an address from a hex string using strict rules.
+         *
+         * Short form (e.g. `"0x1"`) is only accepted for special addresses `0x0` through `0xf`.
+         * All other addresses must use the full 64-character hex format.
+         *
+         * @param hex the hex string, optionally prefixed with `0x`
+         * @return the parsed [AccountAddress]
+         * @throws AccountAddressParseException if the input is invalid or not in the expected format
+         */
         @JvmStatic
         fun fromHex(hex: String): AccountAddress {
             val stripped = if (hex.startsWith("0x") || hex.startsWith("0X")) hex.substring(2) else hex
@@ -91,6 +111,16 @@ data class AccountAddress(val data: ByteArray) : BcsSerializable, Comparable<Acc
             return fromHexRelaxed("0x$stripped")
         }
 
+        /**
+         * Parses an address from a hex string with lenient zero-padding.
+         *
+         * Accepts any hex string up to 64 characters and left-pads with zeros.
+         * For example, `"0xab"` becomes the 32-byte address `0x00...00ab`.
+         *
+         * @param hex the hex string, optionally prefixed with `0x`
+         * @return the parsed [AccountAddress]
+         * @throws AccountAddressParseException if the input contains invalid hex characters or is too long
+         */
         @JvmStatic
         fun fromHexRelaxed(hex: String): AccountAddress {
             val stripped = if (hex.startsWith("0x") || hex.startsWith("0X")) hex.substring(2) else hex
@@ -110,11 +140,13 @@ data class AccountAddress(val data: ByteArray) : BcsSerializable, Comparable<Acc
             }
         }
 
+        /** Deserializes an [AccountAddress] from BCS (reads exactly 32 bytes). */
         @JvmStatic
         fun fromBcs(deserializer: BcsDeserializer): AccountAddress {
             return AccountAddress(deserializer.deserializeFixedBytes(LENGTH))
         }
 
+        /** Returns `true` if [hex] is a valid strict-form address string. */
         @JvmStatic
         fun isValid(hex: String): Boolean {
             return try {

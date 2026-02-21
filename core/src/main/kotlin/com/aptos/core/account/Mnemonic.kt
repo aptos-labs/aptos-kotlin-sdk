@@ -6,12 +6,24 @@ import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
 
 /**
- * BIP-39 mnemonic phrase support.
+ * BIP-39 mnemonic phrase for deterministic key generation.
+ *
+ * Supports 12, 15, 18, 21, or 24-word phrases using the English BIP-39 wordlist.
+ * Use [generate] to create a new random mnemonic or [fromPhrase] to restore from words.
+ *
+ * @property words the individual mnemonic words
  */
 class Mnemonic private constructor(val words: List<String>) {
 
+    /** Returns the mnemonic as a single space-separated string. */
     fun phrase(): String = words.joinToString(" ")
 
+    /**
+     * Derives a 64-byte seed using PBKDF2-HMAC-SHA512 (2048 iterations).
+     *
+     * @param passphrase optional BIP-39 passphrase (default: empty string)
+     * @return the 64-byte seed suitable for key derivation
+     */
     fun toSeed(passphrase: String = ""): ByteArray {
         val mnemonic = phrase().toCharArray()
         val salt = "mnemonic$passphrase".toByteArray(Charsets.UTF_8)
@@ -36,6 +48,12 @@ class Mnemonic private constructor(val words: List<String>) {
         private const val PBKDF2_ITERATIONS = 2048
         private const val SEED_LENGTH_BITS = 512
 
+        /**
+         * Generates a new random mnemonic with the given [wordCount].
+         *
+         * @param wordCount number of words (12, 15, 18, 21, or 24)
+         * @throws IllegalArgumentException if [wordCount] is not a valid BIP-39 word count
+         */
         @JvmStatic
         fun generate(wordCount: Int = 12): Mnemonic {
             require(wordCount == 12 || wordCount == 15 || wordCount == 18 || wordCount == 21 || wordCount == 24) {
@@ -49,6 +67,11 @@ class Mnemonic private constructor(val words: List<String>) {
             return fromEntropy(entropy)
         }
 
+        /**
+         * Parses and validates a mnemonic from a space-separated phrase.
+         *
+         * @throws MnemonicException if the phrase has invalid word count or unknown words
+         */
         @JvmStatic
         fun fromPhrase(phrase: String): Mnemonic {
             val words = phrase.trim().lowercase().split("\\s+".toRegex())
@@ -56,6 +79,7 @@ class Mnemonic private constructor(val words: List<String>) {
             return Mnemonic(words)
         }
 
+        /** Creates a mnemonic from raw entropy bytes with SHA-256 checksum. */
         @JvmStatic
         fun fromEntropy(entropy: ByteArray): Mnemonic {
             val wordList = BIP39_ENGLISH_WORDLIST
@@ -95,6 +119,7 @@ class Mnemonic private constructor(val words: List<String>) {
             }
         }
 
+        /** Returns `true` if [phrase] is a valid BIP-39 mnemonic. */
         @JvmStatic
         fun isValid(phrase: String): Boolean {
             return try {

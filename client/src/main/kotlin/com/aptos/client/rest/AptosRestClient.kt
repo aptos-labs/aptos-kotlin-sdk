@@ -24,6 +24,13 @@ import kotlinx.serialization.json.jsonPrimitive
 
 /**
  * Aptos REST API client with coroutine-based async operations.
+ *
+ * Provides suspend functions for all Aptos node REST endpoints including account info,
+ * resource queries, transaction submission, gas estimation, and view functions.
+ * All retryable operations use exponential backoff per the configured [AptosConfig.retryConfig].
+ *
+ * @param config the network and retry configuration
+ * @param engine optional Ktor [HttpClientEngine] (defaults to CIO; use MockEngine for testing)
  */
 class AptosRestClient(
     val config: AptosConfig,
@@ -92,6 +99,7 @@ class AptosRestClient(
         response.body()
     }
 
+    /** Submits a BCS-encoded signed transaction and returns the pending transaction info. */
     suspend fun submitTransaction(signedTxn: SignedTransaction): PendingTransaction = retryable {
         val bcsBytes = signedTxn.toSubmitBytes()
         val response = httpClient.post("$baseUrl/transactions") {
@@ -102,6 +110,11 @@ class AptosRestClient(
         response.body()
     }
 
+    /**
+     * Polls until the transaction is confirmed or the timeout is reached.
+     *
+     * @throws ApiException if the transaction fails or times out
+     */
     suspend fun waitForTransaction(
         hash: String,
         timeoutMs: Long = 30_000,
@@ -152,6 +165,7 @@ class AptosRestClient(
 
     // --- Balance ---
 
+    /** Returns the APT balance (in octas) for the given [address]. */
     suspend fun getBalance(address: AccountAddress): ULong {
         val resource = getAccountResource(
             address,

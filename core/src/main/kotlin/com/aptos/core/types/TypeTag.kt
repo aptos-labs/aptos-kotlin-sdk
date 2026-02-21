@@ -6,9 +6,14 @@ import com.aptos.core.bcs.BcsSerializer
 import com.aptos.core.error.TypeTagParseException
 
 /**
- * Sealed class representing Move type tags.
- * BCS variant indices: Bool=0x00, U8=0x01, U64=0x02, U128=0x03, Address=0x04,
- * Signer=0x05, Vector=0x06, Struct=0x07, U16=0x08, U32=0x09, U256=0x0a
+ * Sealed class representing Move type tags used in the Aptos type system.
+ *
+ * Type tags identify the types of values on-chain and are used in entry function
+ * type arguments and resource type specifiers. Parse from strings with [fromString]
+ * or deserialize from BCS with [fromBcs].
+ *
+ * BCS variant indices: Bool=0, U8=1, U64=2, U128=3, Address=4,
+ * Signer=5, Vector=6, Struct=7, U16=8, U32=9, U256=10
  */
 sealed class TypeTag : BcsSerializable {
     data object Bool : TypeTag() {
@@ -75,12 +80,21 @@ sealed class TypeTag : BcsSerializable {
     }
 
     companion object {
+        /**
+         * Parses a type tag from its string representation.
+         *
+         * Supported formats: `"bool"`, `"u8"`, `"u64"`, `"vector<u8>"`,
+         * `"0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>"`, etc.
+         *
+         * @throws TypeTagParseException if the input cannot be parsed
+         */
         @JvmStatic
         fun fromString(input: String): TypeTag {
             val parser = TypeTagParser(input)
             return parser.parseTypeTag()
         }
 
+        /** Deserializes a [TypeTag] from BCS (reads variant index, then variant-specific data). */
         @JvmStatic
         fun fromBcs(deserializer: BcsDeserializer): TypeTag {
             return when (val index = deserializer.deserializeVariantIndex()) {

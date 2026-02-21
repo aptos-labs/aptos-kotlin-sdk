@@ -3,10 +3,21 @@ package com.aptos.core.account
 import com.aptos.core.error.MnemonicException
 
 /**
- * BIP-32/BIP-44 derivation path.
+ * BIP-32/BIP-44 hierarchical deterministic key derivation path.
+ *
+ * Paths follow the format `m/purpose'/coin'/account'/change'/index'`
+ * where `'` denotes hardened derivation.
+ *
+ * @property components the ordered list of path components
  */
 data class DerivationPath(val components: List<Component>) {
 
+    /**
+     * A single component of a derivation path.
+     *
+     * @property index the child index (0-based)
+     * @property hardened whether this is a hardened derivation step
+     */
     data class Component(val index: UInt, val hardened: Boolean) {
         fun toInt(): Int = if (hardened) {
             (index.toInt() or HARDENED_BIT)
@@ -26,6 +37,11 @@ data class DerivationPath(val components: List<Component>) {
         @JvmStatic
         val DEFAULT_APTOS = parse("m/44'/637'/0'/0'/0'")
 
+        /**
+         * Parses a derivation path string (e.g. `"m/44'/637'/0'/0'/0'"`).
+         *
+         * @throws MnemonicException if the path format is invalid
+         */
         @JvmStatic
         fun parse(path: String): DerivationPath {
             val trimmed = path.trim()

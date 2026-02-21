@@ -6,7 +6,14 @@ import com.aptos.core.bcs.BcsSerializer
 import com.aptos.core.error.TypeTagParseException
 
 /**
- * Represents a Move struct tag: `address::module::Name<TypeArgs>`.
+ * Represents a fully qualified Move struct type: `address::module::Name<TypeArgs>`.
+ *
+ * Examples: `0x1::aptos_coin::AptosCoin`, `0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>`
+ *
+ * @property address the account address where the module is published
+ * @property module the Move module name
+ * @property name the struct name within the module
+ * @property typeArgs generic type arguments (empty if the struct is not generic)
  */
 data class StructTag(
     val address: AccountAddress,
@@ -30,6 +37,11 @@ data class StructTag(
     }
 
     companion object {
+        /**
+         * Parses a struct tag from a string like `"0x1::module::Name<T1, T2>"`.
+         *
+         * @throws TypeTagParseException if the format is invalid
+         */
         @JvmStatic
         fun fromString(input: String): StructTag {
             val parser = TypeTagParser(input)
@@ -46,6 +58,7 @@ data class StructTag(
             return StructTag(address, module, name, typeArgs)
         }
 
+        /** Returns the struct tag for `0x1::aptos_coin::AptosCoin`. */
         @JvmStatic
         fun aptosCoin(): StructTag = StructTag(
             address = AccountAddress.ONE,
@@ -56,7 +69,10 @@ data class StructTag(
 }
 
 /**
- * Represents a Move module identifier: `address::module`.
+ * Represents a Move module identifier: `address::module_name`.
+ *
+ * @property address the account address where the module is published
+ * @property name the module name
  */
 data class MoveModuleId(
     val address: AccountAddress,
@@ -71,6 +87,11 @@ data class MoveModuleId(
     override fun toString(): String = "${address.toShortString()}::$name"
 
     companion object {
+        /**
+         * Parses a module ID from a string like `"0x1::aptos_account"`.
+         *
+         * @throws TypeTagParseException if the format is invalid
+         */
         @JvmStatic
         fun fromString(input: String): MoveModuleId {
             val parts = input.split("::")

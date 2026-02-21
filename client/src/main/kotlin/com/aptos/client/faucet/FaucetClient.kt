@@ -14,6 +14,10 @@ import kotlinx.coroutines.runBlocking
 
 /**
  * Client for the Aptos faucet API (testnet/devnet/localnet).
+ *
+ * Attempts the modern `/fund` endpoint first, then falls back to the legacy `/mint` endpoint.
+ *
+ * @throws ApiException at construction time if [AptosConfig.faucetUrl] is not configured
  */
 class FaucetClient(
     val config: AptosConfig,
@@ -29,6 +33,11 @@ class FaucetClient(
     private val faucetUrl: String = config.faucetUrl?.trimEnd('/')
         ?: throw ApiException("Faucet URL not configured for this network")
 
+    /**
+     * Requests test tokens from the faucet for the given [address].
+     *
+     * @param amount the amount of octas to request (default: 1 APT = 100,000,000 octas)
+     */
     suspend fun fundAccount(address: AccountAddress, amount: ULong = 100_000_000uL) {
         val response = httpClient.post("$faucetUrl/fund") {
             contentType(ContentType.Application.Json)

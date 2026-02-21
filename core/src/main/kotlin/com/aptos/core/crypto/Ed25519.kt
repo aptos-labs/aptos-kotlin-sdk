@@ -9,12 +9,26 @@ import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters
 import org.bouncycastle.crypto.signers.Ed25519Signer
 import java.security.SecureRandom
 
+/**
+ * Ed25519 cryptographic operations for the Aptos blockchain.
+ *
+ * Provides key generation, signing, and verification using the Ed25519 curve
+ * via Bouncy Castle. All keys and signatures are represented as byte arrays.
+ */
 object Ed25519 {
 
     const val PRIVATE_KEY_LENGTH = 32
     const val PUBLIC_KEY_LENGTH = 32
     const val SIGNATURE_LENGTH = 64
 
+    /**
+     * An Ed25519 private key (32 bytes).
+     *
+     * Use [generate] to create a new random key, [fromHex] to restore from hex,
+     * or [fromSeed] to derive from a longer seed.
+     *
+     * @property data the raw 32-byte private key
+     */
     data class PrivateKey(val data: ByteArray) {
         init {
             require(data.size == PRIVATE_KEY_LENGTH) {
@@ -22,11 +36,13 @@ object Ed25519 {
             }
         }
 
+        /** Derives the corresponding [PublicKey] from this private key. */
         fun publicKey(): PublicKey {
             val params = Ed25519PrivateKeyParameters(data, 0)
             return PublicKey(params.generatePublicKey().encoded)
         }
 
+        /** Signs the given [message] and returns the 64-byte Ed25519 signature. */
         fun sign(message: ByteArray): Signature {
             val params = Ed25519PrivateKeyParameters(data, 0)
             val signer = Ed25519Signer()
@@ -35,6 +51,7 @@ object Ed25519 {
             return Signature(signer.generateSignature())
         }
 
+        /** Returns the hex-encoded private key with `0x` prefix. */
         fun toHex(): String = HexString.encodeWithPrefix(data)
 
         override fun equals(other: Any?): Boolean {
@@ -67,6 +84,11 @@ object Ed25519 {
         }
     }
 
+    /**
+     * An Ed25519 public key (32 bytes).
+     *
+     * @property data the raw 32-byte public key
+     */
     data class PublicKey(val data: ByteArray) : BcsSerializable {
         init {
             require(data.size == PUBLIC_KEY_LENGTH) {
@@ -78,6 +100,11 @@ object Ed25519 {
             serializer.serializeBytes(data)
         }
 
+        /**
+         * Verifies that [signature] is valid for the given [message] under this public key.
+         *
+         * @throws CryptoException if verification encounters an error
+         */
         fun verify(message: ByteArray, signature: Signature): Boolean {
             return try {
                 val params = Ed25519PublicKeyParameters(data, 0)
@@ -107,6 +134,11 @@ object Ed25519 {
         }
     }
 
+    /**
+     * An Ed25519 signature (64 bytes).
+     *
+     * @property data the raw 64-byte signature
+     */
     data class Signature(val data: ByteArray) : BcsSerializable {
         init {
             require(data.size == SIGNATURE_LENGTH) {

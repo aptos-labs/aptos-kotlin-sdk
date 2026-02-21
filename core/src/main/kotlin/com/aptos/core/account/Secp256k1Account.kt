@@ -6,7 +6,12 @@ import com.aptos.core.crypto.SignatureScheme
 import com.aptos.core.types.AccountAddress
 
 /**
- * An Aptos account backed by a Secp256k1 key pair.
+ * An Aptos account backed by a Secp256k1 (ECDSA) key pair.
+ *
+ * Use the companion object factories to create instances:
+ * - [generate] creates a new random account
+ * - [fromPrivateKey] / [fromPrivateKeyHex] restores from a known key
+ * - [fromMnemonic] derives from a BIP-39 mnemonic via BIP-32
  */
 class Secp256k1Account private constructor(
     val privateKey: Secp256k1.PrivateKey,
@@ -22,6 +27,7 @@ class Secp256k1Account private constructor(
 
     override fun sign(message: ByteArray): ByteArray = privateKey.sign(message).data
 
+    /** Signs [message] and returns a typed [Secp256k1.Signature] (rather than raw bytes). */
     fun signSecp256k1(message: ByteArray): Secp256k1.Signature = privateKey.sign(message)
 
     companion object {
@@ -43,6 +49,11 @@ class Secp256k1Account private constructor(
             return fromPrivateKey(Secp256k1.PrivateKey.fromHex(hex))
         }
 
+        /**
+         * Derives a Secp256k1 account from a BIP-39 [mnemonic] using BIP-32 derivation.
+         *
+         * @param path the derivation path (default: `m/44'/637'/0'/0'/0'`)
+         */
         @JvmStatic
         fun fromMnemonic(
             mnemonic: Mnemonic,

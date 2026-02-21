@@ -8,10 +8,13 @@ import com.aptos.core.types.TypeTag
 
 /**
  * Sealed class representing transaction payload variants.
- * BCS variant indices: Script=0, ModuleBundle=1, EntryFunction=2, Multisig=3
+ *
+ * BCS variant indices: Script=0, ModuleBundle=1, EntryFunction=2, Multisig=3.
+ * Most user transactions use [EntryFunction] payloads.
  */
 sealed class TransactionPayload : BcsSerializable {
 
+    /** A Move script payload with bytecode, type arguments, and script arguments. */
     data class Script(
         val code: ByteArray,
         val typeArgs: List<TypeTag>,
@@ -37,6 +40,14 @@ sealed class TransactionPayload : BcsSerializable {
         override fun hashCode(): Int = code.contentHashCode()
     }
 
+    /**
+     * An entry function call payload -- the most common transaction type.
+     *
+     * @property moduleId the `address::module` containing the function
+     * @property functionName the function name within the module
+     * @property typeArgs generic type arguments for the function
+     * @property args BCS-encoded function arguments
+     */
     data class EntryFunction(
         val moduleId: MoveModuleId,
         val functionName: String,
@@ -54,6 +65,7 @@ sealed class TransactionPayload : BcsSerializable {
         }
 
         companion object {
+            /** Creates an `0x1::aptos_account::transfer` payload for native APT transfers. */
             @JvmStatic
             fun aptTransfer(to: AccountAddress, amount: ULong): EntryFunction {
                 val amountSerializer = BcsSerializer()
@@ -70,6 +82,7 @@ sealed class TransactionPayload : BcsSerializable {
                 )
             }
 
+            /** Creates an `0x1::coin::transfer` payload for typed coin transfers. */
             @JvmStatic
             fun coinTransfer(
                 coinType: TypeTag,
@@ -92,6 +105,7 @@ sealed class TransactionPayload : BcsSerializable {
         }
     }
 
+    /** A multisig transaction payload wrapping an optional entry function. */
     data class Multisig(
         val multisigAddress: AccountAddress,
         val entryFunction: EntryFunction?,

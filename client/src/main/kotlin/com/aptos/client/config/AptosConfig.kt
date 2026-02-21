@@ -4,6 +4,15 @@ import com.aptos.core.types.ChainId
 
 /**
  * Configuration for connecting to an Aptos network.
+ *
+ * Use the static factories [mainnet], [testnet], [devnet], or [localnet] for standard
+ * configurations, or construct directly for custom setups.
+ *
+ * @property nodeUrl the full URL of the Aptos REST API (e.g., `"https://fullnode.testnet.aptoslabs.com/v1"`)
+ * @property faucetUrl the faucet URL, or `null` if faucet is not available (e.g., mainnet)
+ * @property chainId optional chain ID to avoid fetching from the node
+ * @property timeoutMs HTTP request timeout in milliseconds
+ * @property retryConfig retry behavior for transient failures
  */
 data class AptosConfig(
     val nodeUrl: String,
@@ -45,6 +54,14 @@ data class AptosConfig(
     }
 }
 
+/**
+ * Configuration for retry behavior with exponential backoff.
+ *
+ * @property maxRetries maximum number of retry attempts after the initial request
+ * @property initialDelayMs initial delay before the first retry
+ * @property maxDelayMs maximum delay between retries
+ * @property backoffMultiplier multiplier applied to the delay after each retry
+ */
 data class RetryConfig(
     val maxRetries: Int = 3,
     val initialDelayMs: Long = 200,

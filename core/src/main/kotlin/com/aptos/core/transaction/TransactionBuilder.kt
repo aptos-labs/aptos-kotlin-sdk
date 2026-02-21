@@ -8,7 +8,19 @@ import com.aptos.core.types.AccountAddress
 import com.aptos.core.types.ChainId
 
 /**
- * Fluent builder for constructing and signing transactions.
+ * Fluent builder for constructing and signing Aptos transactions.
+ *
+ * Provides sensible defaults: `maxGasAmount = 200,000`, `gasUnitPrice = 100`,
+ * and `expirationTimestampSecs = now + 600 seconds`.
+ *
+ * ```kotlin
+ * val signedTxn = TransactionBuilder.builder()
+ *     .sender(account.address)
+ *     .sequenceNumber(0uL)
+ *     .payload(payload)
+ *     .chainId(ChainId.TESTNET)
+ *     .sign(account)
+ * ```
  */
 class TransactionBuilder {
     private var sender: AccountAddress? = null
@@ -41,6 +53,11 @@ class TransactionBuilder {
 
     fun chainId(chainId: ChainId): TransactionBuilder = apply { this.chainId = chainId }
 
+    /**
+     * Builds the [RawTransaction] from the configured fields.
+     *
+     * @throws TransactionBuildException if sender, sequenceNumber, payload, or chainId are missing
+     */
     fun build(): RawTransaction {
         val s = sender ?: throw TransactionBuildException("sender is required")
         val seq = sequenceNumber ?: throw TransactionBuildException("sequenceNumber is required")
@@ -60,6 +77,7 @@ class TransactionBuilder {
         )
     }
 
+    /** Builds and signs the transaction with the given [account]. */
     fun sign(account: Account): SignedTransaction {
         val rawTxn = build().also {
             if (sender == null) sender = account.address
@@ -95,6 +113,7 @@ class TransactionBuilder {
         @JvmStatic
         fun builder(): TransactionBuilder = TransactionBuilder()
 
+        /** Signs a pre-built [rawTransaction] with the given [account]. */
         @JvmStatic
         fun signTransaction(
             account: Account,

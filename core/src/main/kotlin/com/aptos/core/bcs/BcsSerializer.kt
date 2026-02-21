@@ -11,12 +11,26 @@ import java.nio.ByteOrder
  *
  * Encodes values into the BCS format used by the Aptos blockchain.
  * All multi-byte integers are encoded in little-endian byte order.
+ * Sequences are length-prefixed with ULEB128, and structs are serialized
+ * field-by-field in declaration order.
+ *
+ * Typical usage:
+ * ```kotlin
+ * val s = BcsSerializer()
+ * s.serializeU64(42uL)
+ * s.serializeString("hello")
+ * val bytes = s.toByteArray()
+ * ```
+ *
+ * @param initialCapacity the initial buffer capacity in bytes (default 256)
  */
 class BcsSerializer(initialCapacity: Int = 256) {
     private val output = ByteArrayOutputStream(initialCapacity)
 
+    /** Returns the serialized bytes accumulated so far. */
     fun toByteArray(): ByteArray = output.toByteArray()
 
+    /** Serializes a boolean as a single byte: `0x00` for false, `0x01` for true. */
     fun serializeBool(value: Boolean) {
         output.write(if (value) 1 else 0)
     }
@@ -43,31 +57,37 @@ class BcsSerializer(initialCapacity: Int = 256) {
         output.write(buf.array())
     }
 
+    /** Serializes a 128-bit unsigned integer in little-endian byte order (16 bytes). */
     fun serializeU128(value: BigInteger) {
         validateUnsigned(value, 128)
         val bytes = bigIntToLittleEndian(value, 16)
         output.write(bytes)
     }
 
+    /** Serializes a 256-bit unsigned integer in little-endian byte order (32 bytes). */
     fun serializeU256(value: BigInteger) {
         validateUnsigned(value, 256)
         val bytes = bigIntToLittleEndian(value, 32)
         output.write(bytes)
     }
 
+    /** Serializes a variable-length byte array with a ULEB128 length prefix. */
     fun serializeBytes(value: ByteArray) {
         serializeUleb128(value.size.toUInt())
         output.write(value)
     }
 
+    /** Serializes a UTF-8 string with a ULEB128 byte-length prefix. */
     fun serializeString(value: String) {
         serializeBytes(value.toByteArray(Charsets.UTF_8))
     }
 
+    /** Writes raw bytes without a length prefix (used for fixed-size fields like addresses). */
     fun serializeFixedBytes(value: ByteArray) {
         output.write(value)
     }
 
+    /** Encodes an unsigned 32-bit integer using ULEB128 variable-length encoding. */
     fun serializeUleb128(value: UInt) {
         var remaining = value.toInt()
         while (true) {
@@ -81,23 +101,28 @@ class BcsSerializer(initialCapacity: Int = 256) {
         }
     }
 
+    /** Serializes a sequence (vector) length as ULEB128. */
     fun serializeSequenceLength(length: Int) {
         serializeUleb128(length.toUInt())
     }
 
+    /** Serializes a BCS enum/variant index as ULEB128. */
     fun serializeVariantIndex(index: UInt) {
         serializeUleb128(index)
     }
 
+    /** Serializes an option tag: `true` means Some (0x01), `false` means None (0x00). */
     fun serializeOptionTag(hasValue: Boolean) {
         serializeBool(hasValue)
     }
 
+    /** Serializes a list of [BcsSerializable] items with a ULEB128 length prefix. */
     fun <T : BcsSerializable> serializeSequence(items: List<T>) {
         serializeSequenceLength(items.size)
         items.forEach { it.serialize(this) }
     }
 
+    /** Serializes an optional value: `null` writes None, non-null writes Some + value. */
     fun <T : BcsSerializable> serializeOption(value: T?) {
         if (value != null) {
             serializeOptionTag(true)

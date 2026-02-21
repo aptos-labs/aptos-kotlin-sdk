@@ -3,6 +3,7 @@ package com.aptos.client.rest
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+/** Response from the `GET /` (ledger info) endpoint. */
 @Serializable
 data class LedgerInfo(
     @SerialName("chain_id") val chainId: Int,
@@ -16,18 +17,21 @@ data class LedgerInfo(
     @SerialName("git_hash") val gitHash: String? = null,
 )
 
+/** Response from the `GET /accounts/{address}` endpoint. */
 @Serializable
 data class AccountInfo(
     @SerialName("sequence_number") val sequenceNumber: String,
     @SerialName("authentication_key") val authenticationKey: String,
 )
 
+/** A typed resource stored at an account address. */
 @Serializable
 data class AccountResource(
     val type: String,
     val data: kotlinx.serialization.json.JsonObject,
 )
 
+/** Response from transaction query endpoints (may represent pending or committed transactions). */
 @Serializable
 data class TransactionResponse(
     val type: String? = null,
@@ -46,6 +50,7 @@ data class TransactionResponse(
     val timestamp: String? = null,
 )
 
+/** Response from submitting a transaction (before it is committed). */
 @Serializable
 data class PendingTransaction(
     val hash: String,
@@ -56,6 +61,7 @@ data class PendingTransaction(
     @SerialName("expiration_timestamp_secs") val expirationTimestampSecs: String,
 )
 
+/** Response from the `GET /estimate_gas_price` endpoint. */
 @Serializable
 data class GasEstimate(
     @SerialName("gas_estimate") val gasEstimate: Int,
@@ -63,6 +69,7 @@ data class GasEstimate(
     @SerialName("prioritized_gas_estimate") val prioritizedGasEstimate: Int? = null,
 )
 
+/** Error response body from the Aptos REST API. */
 @Serializable
 data class ApiError(
     val message: String,
@@ -70,6 +77,7 @@ data class ApiError(
     @SerialName("vm_error_code") val vmErrorCode: Int? = null,
 )
 
+/** Request body for the `POST /view` endpoint. */
 @Serializable
 data class ViewRequest(
     val function: String,
