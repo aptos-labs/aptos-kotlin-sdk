@@ -2,11 +2,11 @@
 
 ## Overview
 
-A production-ready (Tier 2 / P0+P1) Kotlin SDK for the Aptos blockchain, targeting JVM (Java 11+) and Android (API 26+). Built with idiomatic Kotlin patterns, coroutine-first async, and full Java interoperability.
+A production-ready (Tier 3 / P0+P1+P2) Kotlin SDK for the Aptos blockchain, targeting JVM (Java 11+) and Android (API 26+). Built with idiomatic Kotlin patterns, coroutine-first async, and full Java interoperability.
 
 | Property | Value |
 |----------|-------|
-| Tier | 2 (P0 + P1 features) |
+| Tier | 3 (P0 + P1 + P2 features) |
 | Platform | Kotlin/JVM 1.8+ / Android API 26+ |
 | Java target | 11 |
 | Build | Gradle 8.x + Kotlin DSL |
@@ -15,7 +15,8 @@ A production-ready (Tier 2 / P0+P1) Kotlin SDK for the Aptos blockchain, targeti
 | Async | Kotlin Coroutines (suspend) + blocking wrappers |
 | Crypto | Bouncy Castle 1.79 (bcprov-jdk18on) |
 | Tests | JUnit 5 + MockK + Ktor MockEngine + Kotest assertions |
-| Package | `com.aptos.core`, `com.aptos.client`, `com.aptos.sdk` |
+| Benchmarks | JMH (me.champeau.jmh plugin) |
+| Package | `com.aptos.core`, `com.aptos.client`, `com.aptos.sdk`, `com.aptos.indexer` |
 
 ## Architecture Diagram
 
@@ -121,11 +122,16 @@ A production-ready (Tier 2 / P0+P1) Kotlin SDK for the Aptos blockchain, targeti
   │                            ▲
   └────────────────────────────┘
 
+:indexer ──────────────────► :core   (independent opt-in module)
+
+:benchmarks ──────────────► :core   (JMH benchmarks, not in kover)
+
 External dependencies:
-:core   → kotlin-stdlib, bouncy-castle (bcprov-jdk18on 1.79)
-:client → :core, ktor-client-core, ktor-client-cio, ktor-content-negotiation,
-          ktor-serialization-kotlinx-json, kotlinx-coroutines-core
-:sdk    → :core, :client
+:core       → kotlin-stdlib, bouncy-castle (bcprov-jdk18on 1.79)
+:client     → :core, ktor-client-*, kotlinx-coroutines-core
+:sdk        → :core, :client
+:indexer    → :core, ktor-client-*, kotlinx-serialization (no :client dep)
+:benchmarks → :core, JMH
 ```
 
 ## BCS Serialization Design
@@ -205,12 +211,17 @@ TypeTag (sealed class, 11 variants)
 
 **TransactionAuthenticator (sealed class):**
 ```
-TransactionAuthenticator          AccountAuthenticator
-├── Ed25519Auth    variant: 0     ├── Ed25519Auth    variant: 0
-│   (pubkey + sig)                │   (pubkey + sig)
-└── SingleSender   variant: 4    └── SingleKey      variant: 2
-    (accountAuth)                     (pubKeyType + pubKeyBytes +
-                                       sigType + sigBytes)
+TransactionAuthenticator                AccountAuthenticator
+├── Ed25519Auth       variant: 0        ├── Ed25519Auth       variant: 0
+│   (pubkey + sig)                      │   (pubkey + sig)
+├── MultiEd25519Auth  variant: 1        ├── MultiEd25519Auth  variant: 1
+│   (multiPubkey + multiSig)            │   (multiPubkey + multiSig)
+├── MultiAgent        variant: 2        ├── SingleKey         variant: 2
+│   (sender + secondary addrs+auths)    │   (pubKeyType+pubKeyBytes+sigType+sigBytes)
+├── FeePayer          variant: 3        └── MultiKeyAuth      variant: 3
+│   (sender + secondaries + feePayer)       (multiKeyPubkey + multiKeySig)
+└── SingleSender      variant: 4
+    (accountAuth)
 ```
 
 ## Cryptography Design
@@ -265,12 +276,61 @@ Bouncy Castle 1.79 Integration
         └── HMAC-SHA512 chain derivation for Secp256k1
 ```
 
+**MultiEd25519** -- N-of-M Ed25519 multi-signature (max 32 keys):
+```
+MultiEd25519 (object)
+├── PublicKey (keys: List<Ed25519.PublicKey>, threshold: UByte)
+│   ├── toBytes() → pk1||pk2||...||pkN||threshold
+│   ├── serialize() → BCS serializeBytes(toBytes())
+│   └── authKey() → SHA3-256(toBytes() || 0x01)
+├── Signature (signatures: List<IndexedSignature>, bitmap: Bitmap)
+│   ├── toBytes() → sig1||sig2||...||sigK||4-byte-bitmap
+│   └── serialize() → BCS serializeBytes(toBytes())
+├── IndexedSignature (index: Int, signature: Ed25519.Signature)
+├── Bitmap (bits: Int) → 4-byte MSB-first bitmap
+│   └── fromIndices(sorted, unique, < numKeys)
+└── verify(publicKey, message, signature) → Boolean
+```
+
+**MultiKey** -- Heterogeneous multi-sig (mixed Ed25519 + Secp256k1), scheme byte 0x03:
+```
+MultiKey (object)
+├── AnyPublicKey (type: UByte, keyBytes: ByteArray)
+│   ├── ed25519(pk) / secp256k1(pk) factories
+│   └── BCS: variant_index(type) || bytes
+├── PublicKey (keys: List<AnyPublicKey>, sigsRequired: UByte)
+│   ├── BCS: ULEB128(N) || pk1.serialize() || ... || u8(sigsRequired)
+│   └── authKey() → SHA3-256(BCS(PublicKey) || 0x03)
+├── AnySignature (type: UByte, sigBytes: ByteArray)
+│   └── ed25519(sig) / secp256k1(sig) factories
+└── Signature (signatures: List<AnySignature>, bitmap: Bitmap)
+```
+
+**Keyless** -- OIDC-based keyless authentication:
+```
+Keyless (object)
+├── JwtClaims (iss, aud, sub, nonce, uidKey, uidVal)
+├── parseJwt(token) → JwtClaims (base64 decode payload)
+├── PublicKey (iss, aud, uidKey, uidVal, pepper)
+│   ├── BCS: string fields + bytes(pepper)
+│   └── authKey() → SHA3-256(H(iss)||H(aud)||H(uid_key:uid_val)||pepper||0x05)
+│
+EphemeralKeyPair
+├── Ed25519 key pair + expiration + nonce + blinder(31 bytes)
+├── isExpired() → Boolean
+├── sign(message) → checks expiration, signs with ephemeral key
+└── generate(expirationDateSecs) → factory
+```
+
 **Authentication Key derivation:**
 ```
 AuthenticationKey = SHA3-256(public_key_bytes || scheme_identifier_byte)
-├── fromEd25519(pubkey)   → SHA3-256(32_bytes || 0x00)
-├── fromSecp256k1(pubkey) → SHA3-256(65_bytes || 0x01)  [uncompressed]
-└── derivedAddress()      → AccountAddress(authKey.data)
+├── fromEd25519(pubkey)       → SHA3-256(32_bytes || 0x00)
+├── fromSecp256k1(pubkey)     → SHA3-256(65_bytes || 0x01)  [uncompressed]
+├── fromMultiEd25519(pubkey)  → SHA3-256(pk1||...||pkN||threshold || 0x01)
+├── fromMultiKey(pubkey)      → SHA3-256(BCS(pubkey) || 0x03)
+├── fromKeyless(issH,audH,uidH,pepper) → SHA3-256(issH||audH||uidH||pepper || 0x05)
+└── derivedAddress()          → AccountAddress(authKey.data)
 ```
 
 **Transaction signing flow:**
@@ -311,9 +371,27 @@ Secp256k1Account : Account
 ├── signSecp256k1()          → typed Secp256k1.Signature return
 └── Uses uncompressed (65-byte) public key for auth key derivation
 
+MultiEd25519Account : Account
+├── signers: List<Ed25519Account>    participating signers
+├── signerIndices: List<Int>          position in full key set
+├── multiPublicKey: MultiEd25519.PublicKey  all M keys + threshold
+├── sign() → concatenated sigs + 4-byte bitmap
+├── signMultiEd25519() → typed MultiEd25519.Signature
+└── Companion: create(signers, indices, allPubKeys, threshold)
+
+KeylessAccount : Account
+├── ephemeralKeyPair: EphemeralKeyPair    for signing
+├── keylessPublicKey: Keyless.PublicKey    OIDC-derived
+├── proof: ByteArray                       ZK proof
+├── jwt: String                            original token
+├── sign() → signs with ephemeral key (checks expiration)
+└── Companion: create(ekp, pk, proof, jwt)
+
 AnyAccount (sealed class) : Account
 ├── data class Ed25519(account: Ed25519Account)
 ├── data class Secp256k1(account: Secp256k1Account)
+├── data class MultiEd25519(account: MultiEd25519Account)
+├── data class Keyless(account: KeylessAccount)
 └── Companion: from(account: Account) → wraps into correct variant
 ```
 
@@ -351,9 +429,19 @@ TransactionBuilder (fluent API)
 ├── .maxGasAmount(200_000uL)            default
 ├── .gasUnitPrice(100uL)                default
 ├── .expirationTimestampSecs(...)       default: now + 600s
+├── .secondarySigners(signers)          multi-agent mode
+├── .feePayer(payer)                    fee-payer mode
 ├── .build() → RawTransaction           throws TransactionBuildException
-├── .sign(account) → SignedTransaction  builds + signs in one step
-└── Companion: signTransaction(account, rawTxn) signs pre-built transaction
+├── .sign(account) → SignedTransaction  builds + signs (detects mode)
+│   ├── feePayer set → FeePayer mode (RawTransactionWithData.FeePayer)
+│   ├── secondarySigners set → MultiAgent mode (RawTransactionWithData.MultiAgent)
+│   └── else → single signer (existing)
+└── Companion: signTransaction(), createAccountAuthenticator()
+
+RawTransactionWithData (sealed class)
+├── MultiAgent(rawTxn, secondarySignerAddresses)          variant: 0
+├── FeePayer(rawTxn, secondarySignerAddresses, feePayer)  variant: 1
+└── signingMessage() → RAW_TRANSACTION_WITH_DATA_PREFIX || BCS(self)
 
 RawTransaction (data class, 7 fields)
 ├── sender: AccountAddress
@@ -383,6 +471,8 @@ AptosConfig (data class)
 ├── chainId: ChainId?                   optional, avoids fetching
 ├── timeoutMs: Long = 30_000
 ├── retryConfig: RetryConfig
+├── pepperServiceUrl: String?           keyless pepper service
+├── proverServiceUrl: String?           keyless prover service
 │   ├── maxRetries: Int = 3
 │   ├── initialDelayMs: Long = 200
 │   ├── maxDelayMs: Long = 10_000
@@ -398,14 +488,27 @@ AptosRestClient (suspend functions + blocking wrappers)
 ├── GET  /accounts/{addr}        → getAccount(addr): AccountInfo
 ├── GET  /accounts/{a}/resources → getAccountResources(addr): List<AccountResource>
 ├── GET  /accounts/{a}/resource/{t} → getAccountResource(addr, type): AccountResource
+├── GET  /accounts/{a}/transactions → getAccountTransactions(addr, start?, limit?)
+├── GET  /accounts/{a}/events/{h}/{f} → getEvents(addr, handle, field, start?, limit?)
 ├── GET  /transactions/by_hash/{h}  → getTransactionByHash(hash): TransactionResponse
 ├── POST /transactions           → submitTransaction(signedTxn): PendingTransaction
-│   Content-Type: application/x.aptos.signed_transaction+bcs
-│   Body: BCS-encoded SignedTransaction bytes
+├── POST /transactions/simulate  → simulateTransaction(signedTxn): List<SimulationResult>
 ├── GET  /transactions/by_hash/{h} (polling) → waitForTransaction(hash, timeout, interval)
 ├── GET  /estimate_gas_price     → estimateGasPrice(): GasEstimate
 ├── POST /view                   → view(function, typeArgs, args): JsonArray
 └── Combined: getBalance(addr) → reads CoinStore<AptosCoin> resource → ULong octas
+
+Keyless Clients (in :client module):
+├── PepperClient → POST /v0/pepper → getPepper(jwt, epk, uidKey): ByteArray
+└── ProverClient → POST /v0/prove  → getProof(jwt, epk, exp, pepper, uidKey): ByteArray
+
+AptosIndexerClient (in :indexer module, opt-in):
+├── GraphQL POST to indexer URL
+├── getAccountTokens(owner, offset?, limit?): List<Token>
+├── getCollections(creator?, offset?, limit?): List<Collection>
+├── getAccountTransactionsWithPayload(sender, offset?, limit?): List<IndexerTransaction>
+├── getEvents(address?, type?, offset?, limit?): List<IndexerEvent>
+└── query(graphqlQuery, variables?): String  (raw GraphQL)
 
 FaucetClient
 ├── fundAccount(address, amount=100_000_000)
@@ -554,24 +657,23 @@ Based on [aptos-sdk-specs](https://github.com/aptos-labs/aptos-sdk-specs), the S
 | Type Tags | All 11 variants, BCS, toString | fromString parser (recursive) | — | Implemented |
 | Ed25519 | Key gen, sign, verify | fromSeed, fromHex | — | Implemented |
 | Secp256k1 | Key gen (RFC 6979), sign, verify | Low-S normalization | — | Implemented |
+| MultiEd25519 | — | — | N-of-M multi-sig, bitmap, auth key | Implemented |
+| MultiKey | — | — | Mixed-type multi-sig (Ed25519+Secp256k1) | Implemented |
 | Hashing | SHA3-256, domain separation | SHA-256, pre-computed prefixes | — | Implemented |
-| Authentication Key | fromEd25519, derivedAddress | fromSecp256k1 | — | Implemented |
+| Authentication Key | fromEd25519, derivedAddress | fromSecp256k1 | fromMultiEd25519, fromMultiKey, fromKeyless | Implemented |
 | Mnemonic (BIP-39) | generate, fromPhrase, toSeed | Passphrase, validate | — | Implemented |
 | Key Derivation | SLIP-0010 (Ed25519) | BIP-32 (Secp256k1) | — | Implemented |
-| Transactions | RawTxn, EntryFunction, signing | Builder, SignedTxn, hash | — | Implemented |
-| REST Client | Ledger, account, submit, wait | Resources, gas, view, balance | — | Implemented |
+| Transactions | RawTxn, EntryFunction, signing | Builder, SignedTxn, hash | Multi-agent, fee-payer | Implemented |
+| REST Client | Ledger, account, submit, wait | Resources, gas, view, balance | Simulation, account txns, events | Implemented |
 | Faucet | Fund account | Dual endpoint fallback | — | Implemented |
 | Retry | Exponential backoff | Jitter, configurable | — | Implemented |
+| Keyless (OIDC) | — | — | JWT parsing, ephemeral keys, pepper/prover | Implemented |
+| Indexer | — | — | GraphQL client (tokens, collections, events) | Implemented |
+| Benchmarks | — | — | JMH (BCS, Ed25519, Secp256k1, SHA3) | Implemented |
 
-**Not yet implemented (P2/future):**
-- Multi-agent transactions
-- Fee payer transactions
-- MultiEd25519 authenticator
-- Keyless (OIDC-based) authentication
-- Sponsored transactions
-- Indexer GraphQL client
+**Not yet implemented (future):**
 - Event stream / WebSocket subscriptions
-- Simulation endpoint
+- Sponsored transaction helpers (beyond fee-payer builder)
 
 ## Test Strategy
 
@@ -594,7 +696,7 @@ All tests run via `./gradlew test`. Detekt static analysis via `./gradlew detekt
 
 ```
 aptos-kotlin-sdk/
-├── settings.gradle.kts                        root project + 3 submodules
+├── settings.gradle.kts                        root project + 5 submodules
 ├── build.gradle.kts                           plugins, allprojects config
 ├── gradle.properties                          kotlin.code.style=official
 ├── gradle/libs.versions.toml                  version catalog (all versions centralized)
@@ -608,38 +710,54 @@ aptos-kotlin-sdk/
 │       ├── main/kotlin/com/aptos/core/
 │       │   ├── bcs/           BcsSerializable, BcsSerializer, BcsDeserializer
 │       │   ├── types/         AccountAddress, ChainId, TypeTag, StructTag, MoveModuleId, HexString
-│       │   ├── crypto/        Ed25519, Secp256k1, Hashing, AuthenticationKey, SignatureScheme
-│       │   ├── account/       Account, Ed25519Account, Secp256k1Account, AnyAccount, Mnemonic,
-│       │   │                  DerivationPath, Slip0010, Bip32, BIP39 wordlist
-│       │   ├── transaction/   RawTransaction, TransactionPayload, EntryFunction, SignedTransaction,
-│       │   │                  TransactionAuthenticator, AccountAuthenticator, TransactionBuilder
+│       │   ├── crypto/        Ed25519, Secp256k1, MultiEd25519, MultiKey, Keyless,
+│       │   │                  EphemeralKeyPair, Hashing, AuthenticationKey, SignatureScheme
+│       │   ├── account/       Account, Ed25519Account, Secp256k1Account, MultiEd25519Account,
+│       │   │                  KeylessAccount, AnyAccount, Mnemonic, DerivationPath, Slip0010, Bip32
+│       │   ├── transaction/   RawTransaction, RawTransactionWithData, TransactionPayload,
+│       │   │                  SignedTransaction, TransactionAuthenticator, AccountAuthenticator,
+│       │   │                  TransactionBuilder (single/multi-agent/fee-payer)
 │       │   └── error/         AptosException hierarchy (8 subclasses), ErrorCategory enum
 │       └── test/kotlin/com/aptos/core/
 │           ├── bcs/           BcsSerializerTest, BcsDeserializerTest, BcsSpecTest
 │           ├── types/         AccountAddressTest, TypeTagTest, AddressSpecTest
-│           ├── crypto/        Ed25519Test, Secp256k1Test, HashingTest, AuthenticationKeyTest
-│           ├── account/       Ed25519AccountTest, Secp256k1AccountTest, MnemonicTest, DerivationPathTest
-│           └── transaction/   RawTransactionTest, TransactionBuilderTest, SignedTransactionTest
+│           ├── crypto/        Ed25519Test, Secp256k1Test, MultiEd25519Test, MultiKeyTest,
+│           │                  KeylessTest, EphemeralKeyPairTest, HashingTest, AuthenticationKeyTest
+│           ├── account/       AccountTest, MultiEd25519AccountTest, KeylessAccountTest, MnemonicTest
+│           └── transaction/   TransactionTest, MultiAgentTransactionTest, FeePayerTransactionTest
 │
 ├── client/
 │   ├── build.gradle.kts
 │   └── src/
 │       ├── main/kotlin/com/aptos/client/
-│       │   ├── config/   AptosConfig, RetryConfig
-│       │   ├── rest/     AptosRestClient, Models (8 @Serializable data classes)
+│       │   ├── config/   AptosConfig (+ pepper/prover URLs), RetryConfig
+│       │   ├── rest/     AptosRestClient (+ simulate, accountTxns, events), Models
 │       │   ├── faucet/   FaucetClient
+│       │   ├── keyless/  PepperClient, ProverClient
 │       │   └── retry/    RetryPolicy
 │       └── test/kotlin/com/aptos/client/
-│           ├── rest/     AptosRestClientTest
+│           ├── rest/     AptosRestClientTest, SimulationTest, AccountTransactionsTest, EventsTest
 │           ├── faucet/   FaucetClientTest
+│           ├── keyless/  KeylessClientTest
 │           └── retry/    RetryPolicyTest
 │
 ├── sdk/
+│   ├── build.gradle.kts                       + integrationTest source set
+│   └── src/
+│       ├── main/kotlin/com/aptos/sdk/         Aptos (facade + keyless), AptosBuilder
+│       ├── test/kotlin/com/aptos/sdk/         AptosTest
+│       └── integrationTest/kotlin/            AccountIT, TransferIT, SimulationIT, MultiAgentIT
+│
+├── indexer/                                   (opt-in module)
 │   ├── build.gradle.kts
 │   └── src/
-│       ├── main/kotlin/com/aptos/sdk/    Aptos (facade), AptosBuilder
-│       └── test/kotlin/com/aptos/sdk/    AptosTest
+│       ├── main/kotlin/com/aptos/indexer/    IndexerConfig, Models, Queries, AptosIndexerClient
+│       └── test/kotlin/com/aptos/indexer/    AptosIndexerClientTest, QueriesTest
+│
+├── benchmarks/                                (JMH benchmarks, not in kover)
+│   ├── build.gradle.kts
+│   └── src/jmh/kotlin/com/aptos/benchmarks/  BcsBenchmark, CryptoBenchmark
 │
 └── docs/
-    └── kotlin-DESIGN.md                  ← this file
+    └── kotlin-DESIGN.md                       ← this file
 ```

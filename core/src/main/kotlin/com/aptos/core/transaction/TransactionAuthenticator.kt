@@ -3,11 +3,14 @@ package com.aptos.core.transaction
 import com.aptos.core.bcs.BcsSerializable
 import com.aptos.core.bcs.BcsSerializer
 import com.aptos.core.crypto.Ed25519
+import com.aptos.core.crypto.MultiEd25519
+import com.aptos.core.crypto.MultiKey
+import com.aptos.core.types.AccountAddress
 
 /**
  * Sealed class for account-level authenticators used within transaction authenticators.
  *
- * BCS variant indices: Ed25519=0, SingleKey=2.
+ * BCS variant indices: Ed25519=0, MultiEd25519=1, SingleKey=2, MultiKey=3.
  */
 sealed class AccountAuthenticator : BcsSerializable {
     /** Ed25519 account authenticator (variant index 0). */
@@ -15,6 +18,16 @@ sealed class AccountAuthenticator : BcsSerializable {
         AccountAuthenticator() {
         override fun serialize(serializer: BcsSerializer) {
             serializer.serializeVariantIndex(0u) // Ed25519 = 0
+            publicKey.serialize(serializer)
+            signature.serialize(serializer)
+        }
+    }
+
+    /** MultiEd25519 account authenticator (variant index 1). */
+    data class MultiEd25519Auth(val publicKey: MultiEd25519.PublicKey, val signature: MultiEd25519.Signature) :
+        AccountAuthenticator() {
+        override fun serialize(serializer: BcsSerializer) {
+            serializer.serializeVariantIndex(1u) // MultiEd25519 = 1
             publicKey.serialize(serializer)
             signature.serialize(serializer)
         }
@@ -54,12 +67,22 @@ sealed class AccountAuthenticator : BcsSerializable {
             return result
         }
     }
+
+    /** MultiKey account authenticator (variant index 3). */
+    data class MultiKeyAuth(val publicKey: MultiKey.PublicKey, val signature: MultiKey.Signature) :
+        AccountAuthenticator() {
+        override fun serialize(serializer: BcsSerializer) {
+            serializer.serializeVariantIndex(3u) // MultiKey = 3
+            publicKey.serialize(serializer)
+            signature.serialize(serializer)
+        }
+    }
 }
 
 /**
  * Sealed class for top-level transaction authenticators attached to [SignedTransaction].
  *
- * BCS variant indices: Ed25519=0, SingleSender=4.
+ * BCS variant indices: Ed25519=0, MultiEd25519=1, MultiAgent=2, FeePayer=3, SingleSender=4.
  */
 sealed class TransactionAuthenticator : BcsSerializable {
     /** Ed25519 transaction authenticator (variant index 0) -- legacy format. */
@@ -69,6 +92,52 @@ sealed class TransactionAuthenticator : BcsSerializable {
             serializer.serializeVariantIndex(0u)
             publicKey.serialize(serializer)
             signature.serialize(serializer)
+        }
+    }
+
+    /** MultiEd25519 transaction authenticator (variant index 1). */
+    data class MultiEd25519Auth(val publicKey: MultiEd25519.PublicKey, val signature: MultiEd25519.Signature) :
+        TransactionAuthenticator() {
+        override fun serialize(serializer: BcsSerializer) {
+            serializer.serializeVariantIndex(1u)
+            publicKey.serialize(serializer)
+            signature.serialize(serializer)
+        }
+    }
+
+    /** Multi-agent transaction authenticator (variant index 2). */
+    data class MultiAgent(
+        val sender: AccountAuthenticator,
+        val secondarySignerAddresses: List<AccountAddress>,
+        val secondarySigners: List<AccountAuthenticator>,
+    ) : TransactionAuthenticator() {
+        override fun serialize(serializer: BcsSerializer) {
+            serializer.serializeVariantIndex(2u)
+            sender.serialize(serializer)
+            serializer.serializeSequenceLength(secondarySignerAddresses.size)
+            secondarySignerAddresses.forEach { it.serialize(serializer) }
+            serializer.serializeSequenceLength(secondarySigners.size)
+            secondarySigners.forEach { it.serialize(serializer) }
+        }
+    }
+
+    /** Fee payer transaction authenticator (variant index 3). */
+    data class FeePayer(
+        val sender: AccountAuthenticator,
+        val secondarySignerAddresses: List<AccountAddress>,
+        val secondarySigners: List<AccountAuthenticator>,
+        val feePayerAddress: AccountAddress,
+        val feePayerAuth: AccountAuthenticator,
+    ) : TransactionAuthenticator() {
+        override fun serialize(serializer: BcsSerializer) {
+            serializer.serializeVariantIndex(3u)
+            sender.serialize(serializer)
+            serializer.serializeSequenceLength(secondarySignerAddresses.size)
+            secondarySignerAddresses.forEach { it.serialize(serializer) }
+            serializer.serializeSequenceLength(secondarySigners.size)
+            secondarySigners.forEach { it.serialize(serializer) }
+            feePayerAddress.serialize(serializer)
+            feePayerAuth.serialize(serializer)
         }
     }
 

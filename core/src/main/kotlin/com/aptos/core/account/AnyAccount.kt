@@ -26,11 +26,31 @@ sealed class AnyAccount : Account {
         override fun sign(message: ByteArray): ByteArray = account.sign(message)
     }
 
+    data class MultiEd25519(val account: MultiEd25519Account) : AnyAccount() {
+        override val address: AccountAddress get() = account.address
+        override val publicKeyBytes: ByteArray get() = account.publicKeyBytes
+        override val scheme: SignatureScheme get() = account.scheme
+        override val authenticationKey: AuthenticationKey get() = account.authenticationKey
+
+        override fun sign(message: ByteArray): ByteArray = account.sign(message)
+    }
+
+    data class Keyless(val account: KeylessAccount) : AnyAccount() {
+        override val address: AccountAddress get() = account.address
+        override val publicKeyBytes: ByteArray get() = account.publicKeyBytes
+        override val scheme: SignatureScheme get() = account.scheme
+        override val authenticationKey: AuthenticationKey get() = account.authenticationKey
+
+        override fun sign(message: ByteArray): ByteArray = account.sign(message)
+    }
+
     companion object {
         @JvmStatic
         fun from(account: Account): AnyAccount = when (account) {
             is Ed25519Account -> Ed25519(account)
             is Secp256k1Account -> Secp256k1(account)
+            is MultiEd25519Account -> MultiEd25519(account)
+            is KeylessAccount -> Keyless(account)
             is AnyAccount -> account
             else -> throw IllegalArgumentException("Unsupported account type: ${account::class}")
         }

@@ -10,6 +10,7 @@ kotest = "5.9.1"
 detekt = "1.23.7"
 spotless = "7.0.2"
 kover = "0.9.1"
+jmh = "0.7.2"
 
 [libraries]
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
@@ -38,3 +39,4 @@ kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", versi
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
+jmh = { id = "me.champeau.jmh", version.ref = "jmh" }

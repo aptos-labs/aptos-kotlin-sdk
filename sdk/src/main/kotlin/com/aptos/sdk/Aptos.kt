@@ -2,19 +2,27 @@ package com.aptos.sdk
 
 import com.aptos.client.config.AptosConfig
 import com.aptos.client.faucet.FaucetClient
+import com.aptos.client.keyless.PepperClient
+import com.aptos.client.keyless.ProverClient
 import com.aptos.client.rest.AccountInfo
 import com.aptos.client.rest.AccountResource
 import com.aptos.client.rest.AptosRestClient
+import com.aptos.client.rest.EventResponse
 import com.aptos.client.rest.GasEstimate
 import com.aptos.client.rest.LedgerInfo
 import com.aptos.client.rest.PendingTransaction
+import com.aptos.client.rest.SimulationResult
 import com.aptos.client.rest.TransactionResponse
 import com.aptos.core.account.Account
+import com.aptos.core.account.KeylessAccount
+import com.aptos.core.crypto.EphemeralKeyPair
+import com.aptos.core.crypto.Keyless
 import com.aptos.core.transaction.SignedTransaction
 import com.aptos.core.transaction.TransactionBuilder
 import com.aptos.core.transaction.TransactionPayload
 import com.aptos.core.types.AccountAddress
 import com.aptos.core.types.ChainId
+import com.aptos.core.types.HexString
 import io.ktor.client.engine.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonArray
@@ -90,6 +98,49 @@ class Aptos private constructor(
     fun fundAccountBlocking(address: AccountAddress, amount: ULong = 100_000_000uL) =
         runBlocking { fundAccount(address, amount) }
 
+    // --- Simulation ---
+
+    suspend fun simulateTransaction(signedTxn: SignedTransaction): List<SimulationResult> =
+        restClient.simulateTransaction(signedTxn)
+
+    @JvmName("simulateTransactionSync")
+    fun simulateTransactionBlocking(signedTxn: SignedTransaction): List<SimulationResult> =
+        runBlocking { simulateTransaction(signedTxn) }
+
+    // --- Account Transactions ---
+
+    suspend fun getAccountTransactions(
+        address: AccountAddress,
+        start: Long? = null,
+        limit: Int? = null,
+    ): List<TransactionResponse> = restClient.getAccountTransactions(address, start, limit)
+
+    @JvmName("getAccountTransactionsSync")
+    fun getAccountTransactionsBlocking(
+        address: AccountAddress,
+        start: Long? = null,
+        limit: Int? = null,
+    ): List<TransactionResponse> = runBlocking { getAccountTransactions(address, start, limit) }
+
+    // --- Events ---
+
+    suspend fun getEvents(
+        address: AccountAddress,
+        eventHandle: String,
+        fieldName: String,
+        start: Long? = null,
+        limit: Int? = null,
+    ): List<EventResponse> = restClient.getEvents(address, eventHandle, fieldName, start, limit)
+
+    @JvmName("getEventsSync")
+    fun getEventsBlocking(
+        address: AccountAddress,
+        eventHandle: String,
+        fieldName: String,
+        start: Long? = null,
+        limit: Int? = null,
+    ): List<EventResponse> = runBlocking { getEvents(address, eventHandle, fieldName, start, limit) }
+
     // --- Transactions ---
 
     suspend fun submitTransaction(signedTxn: SignedTransaction): PendingTransaction =
@@ -140,6 +191,60 @@ class Aptos private constructor(
             .build()
 
         return TransactionBuilder.signTransaction(sender, rawTxn)
+    }
+
+    // --- Keyless ---
+
+    /**
+     * Creates a keyless account from a JWT and ephemeral key pair.
+     *
+     * Contacts the pepper and prover services to obtain the pepper and ZK proof.
+     *
+     * @param jwt the JWT token from the OIDC provider
+     * @param ephemeralKeyPair the ephemeral key pair used during the OIDC flow
+     * @param uidKey the JWT claim used as the unique identifier (default: "sub")
+     */
+    suspend fun createKeylessAccount(
+        jwt: String,
+        ephemeralKeyPair: EphemeralKeyPair,
+        uidKey: String = "sub",
+    ): KeylessAccount {
+        val pepperUrl = checkNotNull(config.pepperServiceUrl) { "Pepper service URL not configured" }
+        val proverUrl = checkNotNull(config.proverServiceUrl) { "Prover service URL not configured" }
+
+        val claims = Keyless.parseJwt(jwt)
+        val epkHex = HexString.encodeWithPrefix(ephemeralKeyPair.publicKeyBytes())
+
+        val pepperClient = PepperClient(pepperUrl)
+        val pepper = try {
+            pepperClient.getPepper(jwt, epkHex, uidKey)
+        } finally {
+            pepperClient.close()
+        }
+
+        val proverClient = ProverClient(proverUrl)
+        val proof = try {
+            proverClient.getProof(
+                jwt = jwt,
+                ephemeralPublicKey = epkHex,
+                expirationDateSecs = ephemeralKeyPair.expirationDateSecs,
+                pepper = HexString.encodeWithPrefix(pepper),
+                uidKey = uidKey,
+            )
+        } finally {
+            proverClient.close()
+        }
+
+        val uidVal = if (uidKey == "sub") claims.sub else claims.sub
+        val keylessPublicKey = Keyless.PublicKey(
+            iss = claims.iss,
+            aud = claims.aud,
+            uidKey = uidKey,
+            uidVal = uidVal,
+            pepper = pepper,
+        )
+
+        return KeylessAccount.create(ephemeralKeyPair, keylessPublicKey, proof, jwt)
     }
 
     /** Closes the underlying HTTP clients and releases resources. */

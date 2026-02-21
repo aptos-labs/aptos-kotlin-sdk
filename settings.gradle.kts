@@ -12,3 +12,5 @@ rootProject.name = "aptos-kotlin-sdk"
 include(":core")
 include(":client")
 include(":sdk")
+include(":indexer")
+include(":benchmarks")

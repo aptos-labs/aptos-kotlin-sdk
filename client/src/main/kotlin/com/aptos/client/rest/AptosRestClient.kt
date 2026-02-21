@@ -134,6 +134,69 @@ class AptosRestClient(val config: AptosConfig, engine: HttpClientEngine? = null)
         throw ApiException("Transaction failed: ${txn.vmStatus}", errorCode = txn.vmStatus)
     }
 
+    /** Simulates a signed transaction without executing it. */
+    suspend fun simulateTransaction(signedTxn: SignedTransaction): List<SimulationResult> = retryable {
+        val bcsBytes = signedTxn.toSubmitBytes()
+        val response = httpClient.post("$baseUrl/transactions/simulate") {
+            contentType(ContentType("application", "x.aptos.signed_transaction+bcs"))
+            setBody(bcsBytes)
+        }
+        handleResponse(response)
+        response.body()
+    }
+
+    @JvmName("simulateTransactionSync")
+    fun simulateTransactionBlocking(signedTxn: SignedTransaction): List<SimulationResult> =
+        runBlocking { simulateTransaction(signedTxn) }
+
+    /** Returns transactions sent by the given account address. */
+    suspend fun getAccountTransactions(
+        address: AccountAddress,
+        start: Long? = null,
+        limit: Int? = null,
+    ): List<TransactionResponse> = retryable {
+        val response = httpClient.get("$baseUrl/accounts/${address.toHex()}/transactions") {
+            start?.let { parameter("start", it.toString()) }
+            limit?.let { parameter("limit", it.toString()) }
+        }
+        handleResponse(response)
+        response.body()
+    }
+
+    @JvmName("getAccountTransactionsSync")
+    fun getAccountTransactionsBlocking(
+        address: AccountAddress,
+        start: Long? = null,
+        limit: Int? = null,
+    ): List<TransactionResponse> = runBlocking { getAccountTransactions(address, start, limit) }
+
+    /** Returns events for the given event handle and field. */
+    suspend fun getEvents(
+        address: AccountAddress,
+        eventHandle: String,
+        fieldName: String,
+        start: Long? = null,
+        limit: Int? = null,
+    ): List<EventResponse> = retryable {
+        val response = httpClient.get(
+            "$baseUrl/accounts/${address.toHex()}/events/$eventHandle/$fieldName",
+        ) {
+            start?.let { parameter("start", it.toString()) }
+            limit?.let { parameter("limit", it.toString()) }
+        }
+        handleResponse(response)
+        response.body()
+    }
+
+    @JvmName("getEventsSync")
+    fun getEventsBlocking(
+        address: AccountAddress,
+        eventHandle: String,
+        fieldName: String,
+        start: Long? = null,
+        limit: Int? = null,
+    ): List<EventResponse> = runBlocking { getEvents(address, eventHandle, fieldName, start, limit) }
+
     // --- Gas ---
 
     suspend fun estimateGasPrice(): GasEstimate = retryable {

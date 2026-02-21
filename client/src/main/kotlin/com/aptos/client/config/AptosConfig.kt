@@ -20,12 +20,21 @@ data class AptosConfig(
     val chainId: ChainId? = null,
     val timeoutMs: Long = 30_000,
     val retryConfig: RetryConfig = RetryConfig(),
+    val pepperServiceUrl: String? = null,
+    val proverServiceUrl: String? = null,
 ) {
     companion object {
+        private const val PEPPER_SERVICE_MAINNET = "https://api.mainnet.aptoslabs.com/keyless/pepper/v0"
+        private const val PEPPER_SERVICE_TESTNET = "https://api.testnet.aptoslabs.com/keyless/pepper/v0"
+        private const val PROVER_SERVICE_MAINNET = "https://api.mainnet.aptoslabs.com/keyless/prover/v0"
+        private const val PROVER_SERVICE_TESTNET = "https://api.testnet.aptoslabs.com/keyless/prover/v0"
+
         @JvmStatic
         fun mainnet(): AptosConfig = AptosConfig(
             nodeUrl = "https://fullnode.mainnet.aptoslabs.com/v1",
             chainId = ChainId.MAINNET,
+            pepperServiceUrl = PEPPER_SERVICE_MAINNET,
+            proverServiceUrl = PROVER_SERVICE_MAINNET,
         )
 
         @JvmStatic
@@ -33,6 +42,8 @@ data class AptosConfig(
             nodeUrl = "https://fullnode.testnet.aptoslabs.com/v1",
             faucetUrl = "https://faucet.testnet.aptoslabs.com",
             chainId = ChainId.TESTNET,
+            pepperServiceUrl = PEPPER_SERVICE_TESTNET,
+            proverServiceUrl = PROVER_SERVICE_TESTNET,
         )
 
         @JvmStatic

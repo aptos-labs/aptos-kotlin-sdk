@@ -32,9 +32,14 @@ spotless {
     }
 }
 
+val koverModules = setOf("core", "client", "sdk", "indexer")
+
 subprojects {
+    if (name in koverModules) {
+        apply(plugin = "org.jetbrains.kotlinx.kover")
+    }
+
     apply(plugin = "io.gitlab.arturbosch.detekt")
-    apply(plugin = "org.jetbrains.kotlinx.kover")
 
     detekt {
         config.setFrom(rootProject.files("detekt.yml"))
@@ -63,5 +68,5 @@ subprojects {
 }
 
 dependencies {
-    subprojects.forEach { kover(it) }
+    subprojects.filter { it.name in koverModules }.forEach { kover(it) }
 }

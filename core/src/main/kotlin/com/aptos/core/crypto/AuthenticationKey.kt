@@ -53,5 +53,33 @@ data class AuthenticationKey(val data: ByteArray) {
         @JvmStatic
         fun fromSecp256k1(publicKey: Secp256k1.PublicKey): AuthenticationKey =
             fromPublicKey(publicKey.data, SignatureScheme.SECP256K1)
+
+        /** Derives the authentication key for a MultiEd25519 public key: SHA3-256(pk1||...||pkN||threshold||0x01). */
+        @JvmStatic
+        fun fromMultiEd25519(publicKey: MultiEd25519.PublicKey): AuthenticationKey {
+            val input = publicKey.toBytes() + byteArrayOf(SignatureScheme.MULTI_ED25519.id)
+            return AuthenticationKey(Hashing.sha3256(input))
+        }
+
+        /** Derives the authentication key for a MultiKey public key: SHA3-256(BCS(publicKey)||0x03). */
+        @JvmStatic
+        fun fromMultiKey(publicKey: MultiKey.PublicKey): AuthenticationKey {
+            val bcsSerializer = com.aptos.core.bcs.BcsSerializer()
+            publicKey.serialize(bcsSerializer)
+            val input = bcsSerializer.toByteArray() + byteArrayOf(SignatureScheme.MULTI_KEY.id)
+            return AuthenticationKey(Hashing.sha3256(input))
+        }
+
+        /** Derives the authentication key for a Keyless public key. */
+        @JvmStatic
+        fun fromKeyless(
+            issHash: ByteArray,
+            audHash: ByteArray,
+            uidHash: ByteArray,
+            pepper: ByteArray,
+        ): AuthenticationKey {
+            val input = issHash + audHash + uidHash + pepper + byteArrayOf(SignatureScheme.KEYLESS.id)
+            return AuthenticationKey(Hashing.sha3256(input))
+        }
     }
 }

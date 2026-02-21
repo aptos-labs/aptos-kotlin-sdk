@@ -74,6 +74,26 @@ data class ApiError(
     @SerialName("vm_error_code") val vmErrorCode: Int? = null,
 )
 
+/** Response from the `POST /transactions/simulate` endpoint. */
+@Serializable
+data class SimulationResult(
+    val hash: String,
+    val success: Boolean? = null,
+    @SerialName("vm_status") val vmStatus: String? = null,
+    @SerialName("gas_used") val gasUsed: String? = null,
+    val changes: kotlinx.serialization.json.JsonArray? = null,
+    val events: kotlinx.serialization.json.JsonArray? = null,
+)
+
+/** Response from event query endpoints. */
+@Serializable
+data class EventResponse(
+    val type: String,
+    val data: kotlinx.serialization.json.JsonObject,
+    @SerialName("sequence_number") val sequenceNumber: String,
+    val version: String? = null,
+)
+
 /** Request body for the `POST /view` endpoint. */
 @Serializable
 data class ViewRequest(
