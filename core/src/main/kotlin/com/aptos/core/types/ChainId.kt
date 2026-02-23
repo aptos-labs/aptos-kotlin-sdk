@@ -19,6 +19,8 @@ value class ChainId(val value: UByte) : BcsSerializable {
 
         @JvmStatic val TESTNET = ChainId(2u)
 
+        @JvmStatic val DEVNET = ChainId(3u)
+
         @JvmStatic val LOCAL = ChainId(4u)
     }
 }

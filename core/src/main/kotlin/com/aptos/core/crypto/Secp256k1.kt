@@ -48,6 +48,10 @@ object Secp256k1 {
             require(data.size == PRIVATE_KEY_LENGTH) {
                 "Secp256k1 private key must be $PRIVATE_KEY_LENGTH bytes, got ${data.size}"
             }
+            val d = BigInteger(1, data)
+            require(d > BigInteger.ZERO && d < curveParams.n) {
+                "Secp256k1 private key must be in range [1, n-1]"
+            }
         }
 
         /** Derives the corresponding uncompressed (65-byte) [PublicKey]. */
@@ -67,7 +71,7 @@ object Secp256k1 {
             val signer = ECDSASigner(HMacDSAKCalculator(SHA256Digest()))
             signer.init(true, ECPrivateKeyParameters(d, domainParams))
             val components = signer.generateSignature(hash)
-            var r = components[0]
+            val r = components[0]
             var s = components[1]
             // Low-S normalization
             if (s > halfN) {
@@ -149,6 +153,8 @@ object Secp256k1 {
             return try {
                 val hash = Hashing.sha3256(message)
                 val (r, s) = decodeRS(signature.data)
+                if (r <= BigInteger.ZERO || r >= curveParams.n) return false
+                if (s <= BigInteger.ZERO || s >= curveParams.n) return false
                 // Reject high-S
                 if (s > halfN) return false
                 val point = curveParams.curve.decodePoint(data)

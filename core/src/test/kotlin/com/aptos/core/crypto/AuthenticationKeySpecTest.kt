@@ -67,6 +67,18 @@ class AuthenticationKeySpecTest {
         authKey.data shouldBe expectedHash
     }
 
+    @Test
+    fun `Secp256k1 compressed and uncompressed keys derive the same auth key`() {
+        val privateKey = Secp256k1.PrivateKey.generate()
+        val uncompressed = privateKey.publicKey()
+        val compressed = Secp256k1.PublicKey(uncompressed.compressed())
+
+        val authFromUncompressed = AuthenticationKey.fromSecp256k1(uncompressed)
+        val authFromCompressed = AuthenticationKey.fromSecp256k1(compressed)
+
+        authFromCompressed shouldBe authFromUncompressed
+    }
+
     // -- Auth key is always 32 bytes --
 
     @Test

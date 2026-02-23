@@ -154,6 +154,28 @@ class BcsSerializerTest {
     }
 
     @Test
+    fun `serialize ULEB128 UInt max`() {
+        val s = BcsSerializer()
+        s.serializeUleb128(UInt.MAX_VALUE)
+        s.toByteArray() shouldBe
+            byteArrayOf(
+                0xFF.toByte(),
+                0xFF.toByte(),
+                0xFF.toByte(),
+                0xFF.toByte(),
+                0x0F,
+            )
+    }
+
+    @Test
+    fun `serialize sequence length rejects negative values`() {
+        val s = BcsSerializer()
+        shouldThrow<IllegalArgumentException> {
+            s.serializeSequenceLength(-1)
+        }
+    }
+
+    @Test
     fun `serialize sequence of bcs serializables`() {
         // Test sequence serialization using a simple wrapper
         data class U8Wrapper(val value: UByte) : BcsSerializable {

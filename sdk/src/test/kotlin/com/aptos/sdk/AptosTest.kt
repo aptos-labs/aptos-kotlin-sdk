@@ -71,6 +71,31 @@ class AptosTest {
     }
 
     @Test
+    fun `getTransactionByVersion via facade`() = runTest {
+        val aptos = mockAptos {
+            respond(
+                content = ByteReadChannel(
+                    """
+                    {
+                        "type": "user_transaction",
+                        "hash": "0x1234",
+                        "success": true,
+                        "vm_status": "Executed successfully"
+                    }
+                    """.trimIndent(),
+                ),
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, "application/json"),
+            )
+        }
+
+        val txn = aptos.getTransactionByVersion(999uL)
+        txn.hash shouldBe "0x1234"
+        txn.success shouldBe true
+        aptos.close()
+    }
+
+    @Test
     fun `full flow - generate account, build transfer, sign`() = runTest {
         // This test doesn't need network - just building and signing locally
         val account = Ed25519Account.generate()

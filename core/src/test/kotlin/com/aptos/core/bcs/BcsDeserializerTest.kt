@@ -122,6 +122,21 @@ class BcsDeserializerTest {
     }
 
     @Test
+    fun `deserialize ULEB128 UInt max`() {
+        val d =
+            BcsDeserializer(
+                byteArrayOf(
+                    0xFF.toByte(),
+                    0xFF.toByte(),
+                    0xFF.toByte(),
+                    0xFF.toByte(),
+                    0x0F,
+                ),
+            )
+        d.deserializeUleb128() shouldBe UInt.MAX_VALUE
+    }
+
+    @Test
     fun `deserialize option with value`() {
         val d = BcsDeserializer(byteArrayOf(1, 42))
         d.deserializeOptionTag() shouldBe true
