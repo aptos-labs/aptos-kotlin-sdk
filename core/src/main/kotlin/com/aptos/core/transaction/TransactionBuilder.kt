@@ -35,26 +35,33 @@ class TransactionBuilder {
     private var secondarySignersList: List<Account>? = null
     private var feePayerAccount: Account? = null
 
+    /** Sets the transaction sender address (required). */
     fun sender(sender: AccountAddress): TransactionBuilder = apply { this.sender = sender }
 
+    /** Sets the sender's current on-chain sequence number (required). */
     fun sequenceNumber(sequenceNumber: ULong): TransactionBuilder = apply {
         this.sequenceNumber = sequenceNumber
     }
 
+    /** Sets the transaction payload (required). */
     fun payload(payload: TransactionPayload): TransactionBuilder = apply { this.payload = payload }
 
+    /** Sets the maximum gas units for this transaction (default: 200,000). */
     fun maxGasAmount(maxGasAmount: ULong): TransactionBuilder = apply {
         this.maxGasAmount = maxGasAmount
     }
 
+    /** Sets the gas unit price in octas (default: 100). */
     fun gasUnitPrice(gasUnitPrice: ULong): TransactionBuilder = apply {
         this.gasUnitPrice = gasUnitPrice
     }
 
+    /** Sets the expiration timestamp in seconds since epoch (default: now + 600s). */
     fun expirationTimestampSecs(expirationTimestampSecs: ULong): TransactionBuilder = apply {
         this.expirationTimestampSecs = expirationTimestampSecs
     }
 
+    /** Sets the chain ID for the target network (required). */
     fun chainId(chainId: ChainId): TransactionBuilder = apply { this.chainId = chainId }
 
     /** Sets secondary signers for a multi-agent transaction. */
@@ -182,6 +189,7 @@ class TransactionBuilder {
     }
 
     companion object {
+        /** Creates a new [TransactionBuilder] instance. */
         @JvmStatic
         fun builder(): TransactionBuilder = TransactionBuilder()
 

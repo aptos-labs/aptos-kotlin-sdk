@@ -81,6 +81,7 @@ class ProverClient(
         return HexString.decode(result.proof)
     }
 
+    /** Closes the underlying HTTP client and releases resources. */
     fun close() {
         httpClient.close()
     }

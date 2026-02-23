@@ -23,9 +23,16 @@ import java.security.SecureRandom
  * Verification rejects high-S signatures.
  */
 object Secp256k1 {
+    /** Length of a Secp256k1 private key in bytes. */
     const val PRIVATE_KEY_LENGTH = 32
+
+    /** Length of a SEC1 compressed public key in bytes. */
     const val PUBLIC_KEY_COMPRESSED_LENGTH = 33
+
+    /** Length of a SEC1 uncompressed public key in bytes (0x04 || x || y). */
     const val PUBLIC_KEY_UNCOMPRESSED_LENGTH = 65
+
+    /** Length of an ECDSA signature in bytes (r || s, 32 bytes each). */
     const val SIGNATURE_LENGTH = 64
 
     private val curveParams = CustomNamedCurves.getByName("secp256k1")
@@ -80,6 +87,7 @@ object Secp256k1 {
             return Signature(encodeRS(r, s))
         }
 
+        /** Returns the hex-encoded private key with `0x` prefix. */
         fun toHex(): String = HexString.encodeWithPrefix(data)
 
         override fun equals(other: Any?): Boolean {
@@ -93,6 +101,7 @@ object Secp256k1 {
         override fun toString(): String = "Secp256k1PrivateKey(***)"
 
         companion object {
+            /** Generates a new random Secp256k1 private key using [SecureRandom], rejecting invalid scalars. */
             @JvmStatic
             fun generate(): PrivateKey {
                 val random = SecureRandom()
@@ -105,6 +114,7 @@ object Secp256k1 {
                 return PrivateKey(bytes)
             }
 
+            /** Parses a Secp256k1 private key from a hex-encoded string (with or without `0x` prefix). */
             @JvmStatic
             fun fromHex(hex: String): PrivateKey = PrivateKey(HexString.decode(hex))
         }
@@ -166,6 +176,7 @@ object Secp256k1 {
             }
         }
 
+        /** Returns the hex-encoded public key with `0x` prefix. */
         fun toHex(): String = HexString.encodeWithPrefix(data)
 
         override fun equals(other: Any?): Boolean {
@@ -179,6 +190,7 @@ object Secp256k1 {
         override fun toString(): String = "Secp256k1PublicKey(${toHex()})"
 
         companion object {
+            /** Parses a Secp256k1 public key from a hex-encoded string (with or without `0x` prefix). */
             @JvmStatic
             fun fromHex(hex: String): PublicKey = PublicKey(HexString.decode(hex))
         }
@@ -200,6 +212,7 @@ object Secp256k1 {
             serializer.serializeBytes(data)
         }
 
+        /** Returns the hex-encoded signature with `0x` prefix. */
         fun toHex(): String = HexString.encodeWithPrefix(data)
 
         override fun equals(other: Any?): Boolean {
@@ -213,6 +226,7 @@ object Secp256k1 {
         override fun toString(): String = "Secp256k1Signature(${toHex()})"
 
         companion object {
+            /** Parses a Secp256k1 signature from a hex-encoded string (with or without `0x` prefix). */
             @JvmStatic
             fun fromHex(hex: String): Signature = Signature(HexString.decode(hex))
         }

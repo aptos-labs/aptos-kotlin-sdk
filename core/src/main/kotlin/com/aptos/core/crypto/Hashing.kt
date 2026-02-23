@@ -51,6 +51,7 @@ object Hashing {
         sha3256("APTOS::RawTransactionWithData".toByteArray(Charsets.UTF_8))
     }
 
+    /** Pre-computed SHA3-256("APTOS::Transaction") for transaction hashing. */
     @JvmStatic
     val TRANSACTION_PREFIX: ByteArray by lazy {
         sha3256("APTOS::Transaction".toByteArray(Charsets.UTF_8))

@@ -12,7 +12,10 @@ import com.aptos.core.types.HexString
  * The signature is the concatenation of the collected Ed25519 signatures plus a 4-byte bitmap.
  */
 object MultiEd25519 {
+    /** Maximum number of Ed25519 public keys in a multi-sig. */
     const val MAX_KEYS = 32
+
+    /** Length of the signer bitmap in bytes. */
     const val BITMAP_LENGTH = 4
 
     /**
@@ -54,6 +57,7 @@ object MultiEd25519 {
             return AuthenticationKey(Hashing.sha3256(input))
         }
 
+        /** Returns the hex-encoded multi-sig public key with `0x` prefix. */
         fun toHex(): String = HexString.encodeWithPrefix(toBytes())
 
         override fun equals(other: Any?): Boolean {

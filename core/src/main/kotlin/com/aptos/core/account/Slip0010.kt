@@ -6,11 +6,22 @@ import javax.crypto.spec.SecretKeySpec
 
 /**
  * SLIP-0010 key derivation for Ed25519.
- * Uses HMAC-SHA512 chain derivation as specified in SLIP-0010.
+ *
+ * Uses HMAC-SHA512 chain derivation as specified in
+ * [SLIP-0010](https://github.com/satoshilabs/slips/blob/master/slip-0010.md).
+ * Only hardened derivation is supported for Ed25519.
  */
 object Slip0010 {
     private const val ED25519_SEED = "ed25519 seed"
 
+    /**
+     * Derives a 32-byte Ed25519 private key from a seed using the given derivation path.
+     *
+     * @param seed the master seed (typically 64 bytes from BIP-39 mnemonic)
+     * @param path the derivation path (all components must be hardened for Ed25519)
+     * @return the derived 32-byte private key
+     * @throws com.aptos.core.error.MnemonicException if any path component is non-hardened
+     */
     @JvmStatic
     fun deriveEd25519(seed: ByteArray, path: DerivationPath): ByteArray {
         val (key, chainCode) = masterKey(seed)

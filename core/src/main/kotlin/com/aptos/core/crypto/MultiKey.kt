@@ -9,8 +9,10 @@ import com.aptos.core.bcs.BcsSerializer
  * Uses scheme byte 0x03 for authentication key derivation.
  */
 object MultiKey {
-    /** Key type constants for AnyPublicKey / AnySignature. */
+    /** BCS variant index for Ed25519 key/signature types. */
     const val KEY_TYPE_ED25519: UByte = 0u
+
+    /** BCS variant index for Secp256k1 key/signature types. */
     const val KEY_TYPE_SECP256K1: UByte = 1u
 
     /**
@@ -33,9 +35,11 @@ object MultiKey {
         override fun hashCode(): Int = 31 * type.hashCode() + keyBytes.contentHashCode()
 
         companion object {
+            /** Wraps an [Ed25519.PublicKey] as an [AnyPublicKey]. */
             @JvmStatic
             fun ed25519(publicKey: Ed25519.PublicKey): AnyPublicKey = AnyPublicKey(KEY_TYPE_ED25519, publicKey.data)
 
+            /** Wraps a [Secp256k1.PublicKey] as an [AnyPublicKey]. */
             @JvmStatic
             fun secp256k1(publicKey: Secp256k1.PublicKey): AnyPublicKey =
                 AnyPublicKey(KEY_TYPE_SECP256K1, publicKey.data)
@@ -89,9 +93,11 @@ object MultiKey {
         override fun hashCode(): Int = 31 * type.hashCode() + sigBytes.contentHashCode()
 
         companion object {
+            /** Wraps an [Ed25519.Signature] as an [AnySignature]. */
             @JvmStatic
             fun ed25519(signature: Ed25519.Signature): AnySignature = AnySignature(KEY_TYPE_ED25519, signature.data)
 
+            /** Wraps a [Secp256k1.Signature] as an [AnySignature]. */
             @JvmStatic
             fun secp256k1(signature: Secp256k1.Signature): AnySignature =
                 AnySignature(KEY_TYPE_SECP256K1, signature.data)
