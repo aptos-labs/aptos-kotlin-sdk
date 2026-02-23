@@ -15,4 +15,6 @@ include(":client")
 include(":sdk")
 include(":indexer")
 include(":benchmarks")
-include(":examples:android-wallet")
+if (JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17)) {
+    include(":examples:android-wallet")
+}

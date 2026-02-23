@@ -3,6 +3,7 @@ package com.aptos.core.crypto
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
+import java.math.BigInteger
 
 class Secp256k1Test {
     @Test
@@ -100,13 +101,78 @@ class Secp256k1Test {
     @Test
     fun `reject private key equal to curve order`() {
         val n = org.bouncycastle.crypto.ec.CustomNamedCurves.getByName("secp256k1").n
-        val nBytes =
-            n.toByteArray().let {
-                if (it.size == 33 && it[0] == 0.toByte()) it.copyOfRange(1, 33) else it
-            }
+        val nBytes = toFixed32Bytes(n)
         nBytes.size shouldBe 32
         shouldThrow<IllegalArgumentException> {
             Secp256k1.PrivateKey(nBytes)
+        }
+    }
+
+    @Test
+    fun `verify rejects signature with r equals zero`() {
+        val privateKey = Secp256k1.PrivateKey.generate()
+        val publicKey = privateKey.publicKey()
+        val message = "invalid-r-zero".toByteArray()
+        val validSignature = privateKey.sign(message).data
+
+        val tampered = validSignature.copyOf()
+        val zero = ByteArray(32)
+        System.arraycopy(zero, 0, tampered, 0, 32)
+
+        publicKey.verify(message, Secp256k1.Signature(tampered)) shouldBe false
+    }
+
+    @Test
+    fun `verify rejects signature with s equals zero`() {
+        val privateKey = Secp256k1.PrivateKey.generate()
+        val publicKey = privateKey.publicKey()
+        val message = "invalid-s-zero".toByteArray()
+        val validSignature = privateKey.sign(message).data
+
+        val tampered = validSignature.copyOf()
+        val zero = ByteArray(32)
+        System.arraycopy(zero, 0, tampered, 32, 32)
+
+        publicKey.verify(message, Secp256k1.Signature(tampered)) shouldBe false
+    }
+
+    @Test
+    fun `verify rejects signature with r equal to curve order`() {
+        val privateKey = Secp256k1.PrivateKey.generate()
+        val publicKey = privateKey.publicKey()
+        val message = "invalid-r-n".toByteArray()
+        val validSignature = privateKey.sign(message).data
+        val n = org.bouncycastle.crypto.ec.CustomNamedCurves.getByName("secp256k1").n
+
+        val tampered = validSignature.copyOf()
+        val nBytes = toFixed32Bytes(n)
+        System.arraycopy(nBytes, 0, tampered, 0, 32)
+
+        publicKey.verify(message, Secp256k1.Signature(tampered)) shouldBe false
+    }
+
+    @Test
+    fun `verify rejects signature with s equal to curve order`() {
+        val privateKey = Secp256k1.PrivateKey.generate()
+        val publicKey = privateKey.publicKey()
+        val message = "invalid-s-n".toByteArray()
+        val validSignature = privateKey.sign(message).data
+        val n = org.bouncycastle.crypto.ec.CustomNamedCurves.getByName("secp256k1").n
+
+        val tampered = validSignature.copyOf()
+        val nBytes = toFixed32Bytes(n)
+        System.arraycopy(nBytes, 0, tampered, 32, 32)
+
+        publicKey.verify(message, Secp256k1.Signature(tampered)) shouldBe false
+    }
+
+    private fun toFixed32Bytes(value: BigInteger): ByteArray {
+        val bytes = value.toByteArray()
+        return when {
+            bytes.size == 32 -> bytes
+            bytes.size == 33 && bytes[0] == 0.toByte() -> bytes.copyOfRange(1, 33)
+            bytes.size < 32 -> ByteArray(32 - bytes.size) + bytes
+            else -> bytes.copyOfRange(bytes.size - 32, bytes.size)
         }
     }
 }
