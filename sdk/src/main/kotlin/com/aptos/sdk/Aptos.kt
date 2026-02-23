@@ -231,7 +231,9 @@ class Aptos private constructor(
      * @param timeoutMs maximum time to wait in milliseconds (default: 30,000)
      * @param pollIntervalMs polling interval in milliseconds (default: 1,000)
      * @return the committed transaction response
-     * @throws com.aptos.core.error.ApiException if the transaction is not found within the timeout
+     * @throws com.aptos.core.error.ApiException if the transaction is not found within the timeout,
+     *   or if the underlying REST API call fails (including request timeouts or transactions that are
+     *   committed but fail on chain)
      */
     suspend fun waitForTransaction(
         hash: String,

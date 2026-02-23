@@ -378,25 +378,30 @@ Query tokens, collections, transactions, and events:
 ```kotlin
 import com.aptos.indexer.AptosIndexerClient
 import com.aptos.indexer.IndexerConfig
+import kotlinx.coroutines.runBlocking
 
-val indexer = AptosIndexerClient(IndexerConfig.testnet())
+fun main() = runBlocking {
+    val indexer = AptosIndexerClient(IndexerConfig.testnet())
 
-// Fetch tokens owned by an account
-val tokens = indexer.getAccountTokens("0x1")
+    try {
+        // Fetch tokens owned by an account
+        val tokens = indexer.getAccountTokens("0x1")
 
-// Fetch NFT collections
-val collections = indexer.getCollections(creatorAddress = "0x1")
+        // Fetch NFT collections
+        val collections = indexer.getCollections(creatorAddress = "0x1")
 
-// Fetch account transactions with payload data
-val txns = indexer.getAccountTransactionsWithPayload(sender = "0x1")
+        // Fetch account transactions with payload data
+        val txns = indexer.getAccountTransactionsWithPayload(sender = "0x1")
 
-// Fetch events
-val events = indexer.getEvents(accountAddress = "0x1")
+        // Fetch events
+        val events = indexer.getEvents(accountAddress = "0x1")
 
-// Custom GraphQL query
-val rawResult = indexer.query("{ ledger_infos { chain_id } }")
-
-indexer.close()
+        // Custom GraphQL query
+        val rawResult = indexer.query("{ ledger_infos { chain_id } }")
+    } finally {
+        indexer.close()
+    }
+}
 ```
 
 ## Configuration
