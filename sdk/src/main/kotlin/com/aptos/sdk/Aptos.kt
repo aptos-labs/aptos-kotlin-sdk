@@ -61,60 +61,121 @@ class Aptos private constructor(
 
     // --- Account ---
 
+    /**
+     * Fetches on-chain account information, including the sequence number and authentication key.
+     *
+     * @param address the account address to look up
+     * @return account metadata from the REST API
+     */
     suspend fun getAccount(address: AccountAddress): AccountInfo = restClient.getAccount(address)
 
+    /**
+     * Fetches all resources stored under an account.
+     *
+     * @param address the account whose resources to retrieve
+     * @return list of all account resources
+     */
     suspend fun getAccountResources(address: AccountAddress): List<AccountResource> =
         restClient.getAccountResources(address)
 
+    /**
+     * Fetches a single resource by type from an account.
+     *
+     * @param address the account address
+     * @param resourceType the fully-qualified Move resource type (e.g. `"0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>"`)
+     * @return the requested account resource
+     */
     suspend fun getAccountResource(address: AccountAddress, resourceType: String): AccountResource =
         restClient.getAccountResource(address, resourceType)
 
     // --- Balance ---
 
+    /**
+     * Returns the APT balance (in octas) for the given account.
+     *
+     * @param address the account address
+     * @return balance in octas (1 APT = 100,000,000 octas)
+     */
     suspend fun getBalance(address: AccountAddress): ULong = restClient.getBalance(address)
 
+    /** Blocking variant of [getBalance] for Java interop. */
     @JvmName("getBalanceSync")
     fun getBalanceBlocking(address: AccountAddress): ULong = runBlocking { getBalance(address) }
 
     // --- Ledger ---
 
+    /**
+     * Fetches current ledger information, including chain ID, epoch, and block height.
+     *
+     * @return current ledger metadata
+     */
     suspend fun getLedgerInfo(): LedgerInfo = restClient.getLedgerInfo()
 
+    /** Blocking variant of [getLedgerInfo] for Java interop. */
     @JvmName("getLedgerInfoSync")
     fun getLedgerInfoBlocking(): LedgerInfo = runBlocking { getLedgerInfo() }
 
     // --- Gas ---
 
+    /**
+     * Estimates the current gas unit price.
+     *
+     * @return gas price estimate with standard, prioritized, and deprioritized values
+     */
     suspend fun estimateGasPrice(): GasEstimate = restClient.estimateGasPrice()
 
     // --- Faucet ---
 
+    /**
+     * Funds an account via the faucet (testnet/devnet/localnet only).
+     *
+     * @param address the account to fund
+     * @param amount the amount of octas to request (default: 100,000,000 = 1 APT)
+     * @throws IllegalStateException if no faucet URL is configured for the current network
+     */
     suspend fun fundAccount(address: AccountAddress, amount: ULong = 100_000_000uL) {
         val faucet = checkNotNull(faucetClient) { "Faucet not available for this network configuration" }
         faucet.fundAccount(address, amount)
     }
 
+    /** Blocking variant of [fundAccount] for Java interop. */
     @JvmName("fundAccountSync")
     fun fundAccountBlocking(address: AccountAddress, amount: ULong = 100_000_000uL) =
         runBlocking { fundAccount(address, amount) }
 
     // --- Simulation ---
 
+    /**
+     * Simulates a signed transaction without submitting it to the blockchain.
+     *
+     * @param signedTxn the signed transaction to simulate
+     * @return simulation results including gas used and execution status
+     */
     suspend fun simulateTransaction(signedTxn: SignedTransaction): List<SimulationResult> =
         restClient.simulateTransaction(signedTxn)
 
+    /** Blocking variant of [simulateTransaction] for Java interop. */
     @JvmName("simulateTransactionSync")
     fun simulateTransactionBlocking(signedTxn: SignedTransaction): List<SimulationResult> =
         runBlocking { simulateTransaction(signedTxn) }
 
     // --- Account Transactions ---
 
+    /**
+     * Fetches transactions sent by an account.
+     *
+     * @param address the sender address
+     * @param start optional starting sequence number for pagination
+     * @param limit optional maximum number of transactions to return
+     * @return list of transactions sent by the account
+     */
     suspend fun getAccountTransactions(
         address: AccountAddress,
         start: Long? = null,
         limit: Int? = null,
     ): List<TransactionResponse> = restClient.getAccountTransactions(address, start, limit)
 
+    /** Blocking variant of [getAccountTransactions] for Java interop. */
     @JvmName("getAccountTransactionsSync")
     fun getAccountTransactionsBlocking(
         address: AccountAddress,
@@ -124,6 +185,16 @@ class Aptos private constructor(
 
     // --- Events ---
 
+    /**
+     * Fetches events from an event handle stored under an account.
+     *
+     * @param address the account address
+     * @param eventHandle the fully-qualified event handle struct type
+     * @param fieldName the event handle field name
+     * @param start optional starting sequence number for pagination
+     * @param limit optional maximum number of events to return
+     * @return list of events matching the criteria
+     */
     suspend fun getEvents(
         address: AccountAddress,
         eventHandle: String,
@@ -132,6 +203,7 @@ class Aptos private constructor(
         limit: Int? = null,
     ): List<EventResponse> = restClient.getEvents(address, eventHandle, fieldName, start, limit)
 
+    /** Blocking variant of [getEvents] for Java interop. */
     @JvmName("getEventsSync")
     fun getEventsBlocking(
         address: AccountAddress,
@@ -143,20 +215,48 @@ class Aptos private constructor(
 
     // --- Transactions ---
 
+    /**
+     * Submits a signed transaction to the blockchain.
+     *
+     * @param signedTxn the BCS-encoded signed transaction
+     * @return pending transaction with its hash for status tracking
+     */
     suspend fun submitTransaction(signedTxn: SignedTransaction): PendingTransaction =
         restClient.submitTransaction(signedTxn)
 
+    /**
+     * Polls until a transaction is committed or the timeout is reached.
+     *
+     * @param hash the transaction hash to wait for
+     * @param timeoutMs maximum time to wait in milliseconds (default: 30,000)
+     * @param pollIntervalMs polling interval in milliseconds (default: 1,000)
+     * @return the committed transaction response
+     * @throws com.aptos.core.error.ApiException if the transaction is not found within the timeout
+     */
     suspend fun waitForTransaction(
         hash: String,
         timeoutMs: Long = 30_000,
         pollIntervalMs: Long = 1_000,
     ): TransactionResponse = restClient.waitForTransaction(hash, timeoutMs, pollIntervalMs)
 
+    /**
+     * Fetches a committed transaction by its hash.
+     *
+     * @param hash the transaction hash (hex-encoded with `0x` prefix)
+     * @return the transaction response
+     */
     suspend fun getTransactionByHash(hash: String): TransactionResponse = restClient.getTransactionByHash(hash)
 
+    /**
+     * Fetches a committed transaction by its ledger version.
+     *
+     * @param version the ledger version
+     * @return the transaction response
+     */
     suspend fun getTransactionByVersion(version: ULong): TransactionResponse =
         restClient.getTransactionByVersion(version)
 
+    /** Blocking variant of [getTransactionByVersion] for Java interop. */
     @JvmName("getTransactionByVersionSync")
     fun getTransactionByVersionBlocking(version: ULong): TransactionResponse = runBlocking {
         getTransactionByVersion(version)
@@ -164,6 +264,16 @@ class Aptos private constructor(
 
     // --- View ---
 
+    /**
+     * Executes a Move view function and returns the result.
+     *
+     * View functions are read-only and do not modify on-chain state.
+     *
+     * @param function the fully-qualified function name (e.g. `"0x1::coin::balance"`)
+     * @param typeArguments Move type arguments for the function
+     * @param arguments function arguments as JSON-encoded strings
+     * @return the view function result as a JSON array
+     */
     suspend fun view(
         function: String,
         typeArguments: List<String> = emptyList(),

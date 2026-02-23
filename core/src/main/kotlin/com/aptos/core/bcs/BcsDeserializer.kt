@@ -28,8 +28,10 @@ class BcsDeserializer(private val input: ByteArray) {
         }
     }
 
+    /** Deserializes an unsigned 8-bit integer from a single byte. */
     fun deserializeU8(): UByte = readByte().toUByte()
 
+    /** Deserializes an unsigned 16-bit integer from 2 little-endian bytes. */
     fun deserializeU16(): UShort {
         ensureRemaining(2)
         val b0 = input[offset].toInt() and 0xFF
@@ -38,6 +40,7 @@ class BcsDeserializer(private val input: ByteArray) {
         return ((b1 shl 8) or b0).toUShort()
     }
 
+    /** Deserializes an unsigned 32-bit integer from 4 little-endian bytes. */
     fun deserializeU32(): UInt {
         ensureRemaining(4)
         val b0 = input[offset].toLong() and 0xFF
@@ -48,6 +51,7 @@ class BcsDeserializer(private val input: ByteArray) {
         return (b0 or (b1 shl 8) or (b2 shl 16) or (b3 shl 24)).toUInt()
     }
 
+    /** Deserializes an unsigned 64-bit integer from 8 little-endian bytes. */
     fun deserializeU64(): ULong {
         ensureRemaining(8)
         var value = 0uL
@@ -58,6 +62,7 @@ class BcsDeserializer(private val input: ByteArray) {
         return value
     }
 
+    /** Deserializes an unsigned 128-bit integer from 16 little-endian bytes. */
     fun deserializeU128(): BigInteger {
         ensureRemaining(16)
         val value = littleEndianToBigInt(input, offset, 16)
@@ -65,6 +70,7 @@ class BcsDeserializer(private val input: ByteArray) {
         return value
     }
 
+    /** Deserializes an unsigned 256-bit integer from 32 little-endian bytes. */
     fun deserializeU256(): BigInteger {
         ensureRemaining(32)
         val value = littleEndianToBigInt(input, offset, 32)
@@ -102,10 +108,13 @@ class BcsDeserializer(private val input: ByteArray) {
         throw BcsDeserializationException("ULEB128 too long for u32")
     }
 
+    /** Deserializes a ULEB128-encoded sequence (vector) length. */
     fun deserializeSequenceLength(): Int = deserializeUleb128().toInt()
 
+    /** Deserializes a ULEB128-encoded BCS enum/variant index. */
     fun deserializeVariantIndex(): UInt = deserializeUleb128()
 
+    /** Deserializes an option tag: returns `true` for Some, `false` for None. */
     fun deserializeOptionTag(): Boolean = deserializeBool()
 
     private fun readByte(): Byte {
@@ -136,8 +145,22 @@ class BcsDeserializer(private val input: ByteArray) {
     }
 
     companion object {
+        /**
+         * Converts a full little-endian byte array to a non-negative [BigInteger].
+         *
+         * @param bytes the little-endian bytes
+         * @return the corresponding non-negative [BigInteger]
+         */
         fun littleEndianToBigInt(bytes: ByteArray): BigInteger = littleEndianToBigInt(bytes, 0, bytes.size)
 
+        /**
+         * Converts a slice of a little-endian byte array to a non-negative [BigInteger].
+         *
+         * @param bytes the source byte array
+         * @param start the start offset within [bytes]
+         * @param length the number of bytes to convert
+         * @return the corresponding non-negative [BigInteger]
+         */
         fun littleEndianToBigInt(bytes: ByteArray, start: Int, length: Int): BigInteger {
             // Reverse to big-endian and prepend 0x00 to ensure positive interpretation
             val bigEndian = ByteArray(length + 1)

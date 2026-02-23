@@ -33,16 +33,19 @@ class BcsSerializer(initialCapacity: Int = 256) {
         output.write(if (value) 1 else 0)
     }
 
+    /** Serializes an unsigned 8-bit integer as a single byte. */
     fun serializeU8(value: UByte) {
         output.write(value.toInt())
     }
 
+    /** Serializes an unsigned 16-bit integer in little-endian byte order (2 bytes). */
     fun serializeU16(value: UShort) {
         val v = value.toInt()
         output.write(v and 0xFF)
         output.write((v ushr 8) and 0xFF)
     }
 
+    /** Serializes an unsigned 32-bit integer in little-endian byte order (4 bytes). */
     fun serializeU32(value: UInt) {
         output.write((value and 0xFFu).toInt())
         output.write(((value shr 8) and 0xFFu).toInt())
@@ -50,6 +53,7 @@ class BcsSerializer(initialCapacity: Int = 256) {
         output.write(((value shr 24) and 0xFFu).toInt())
     }
 
+    /** Serializes an unsigned 64-bit integer in little-endian byte order (8 bytes). */
     fun serializeU64(value: ULong) {
         output.write((value and 0xFFuL).toInt())
         output.write(((value shr 8) and 0xFFuL).toInt())
@@ -147,6 +151,13 @@ class BcsSerializer(initialCapacity: Int = 256) {
     }
 
     companion object {
+        /**
+         * Converts a non-negative [BigInteger] to a fixed-size little-endian byte array.
+         *
+         * @param value the non-negative integer to convert
+         * @param length the desired output length in bytes
+         * @return little-endian byte array, zero-padded on the right if needed
+         */
         fun bigIntToLittleEndian(value: BigInteger, length: Int): ByteArray {
             val result = ByteArray(length)
             val bigEndian = value.toByteArray()

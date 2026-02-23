@@ -53,32 +53,58 @@ class AptosRestClient(val config: AptosConfig, engine: HttpClientEngine? = null)
 
     // --- Ledger ---
 
+    /**
+     * Fetches current ledger information from the node.
+     *
+     * @return ledger metadata including chain ID, epoch, and block height
+     */
     suspend fun getLedgerInfo(): LedgerInfo = retryable {
         val response = httpClient.get(baseUrl)
         handleResponse(response)
         response.body()
     }
 
+    /** Blocking variant of [getLedgerInfo] for Java interop. */
     @JvmName("getLedgerInfoSync")
     fun getLedgerInfoBlocking(): LedgerInfo = runBlocking { getLedgerInfo() }
 
     // --- Account ---
 
+    /**
+     * Fetches on-chain account information.
+     *
+     * @param address the account address to look up
+     * @return account metadata including sequence number and authentication key
+     */
     suspend fun getAccount(address: AccountAddress): AccountInfo = retryable {
         val response = httpClient.get("$baseUrl/accounts/${address.toHex()}")
         handleResponse(response)
         response.body()
     }
 
+    /** Blocking variant of [getAccount] for Java interop. */
     @JvmName("getAccountSync")
     fun getAccountBlocking(address: AccountAddress): AccountInfo = runBlocking { getAccount(address) }
 
+    /**
+     * Fetches all resources stored under an account.
+     *
+     * @param address the account whose resources to retrieve
+     * @return list of all resources held by the account
+     */
     suspend fun getAccountResources(address: AccountAddress): List<AccountResource> = retryable {
         val response = httpClient.get("$baseUrl/accounts/${address.toHex()}/resources")
         handleResponse(response)
         response.body()
     }
 
+    /**
+     * Fetches a specific resource by type from an account.
+     *
+     * @param address the account address
+     * @param resourceType the fully-qualified Move resource type
+     * @return the requested resource
+     */
     suspend fun getAccountResource(address: AccountAddress, resourceType: String): AccountResource = retryable {
         val response = httpClient.get("$baseUrl/accounts/${address.toHex()}/resource/$resourceType")
         handleResponse(response)
@@ -87,18 +113,31 @@ class AptosRestClient(val config: AptosConfig, engine: HttpClientEngine? = null)
 
     // --- Transactions ---
 
+    /**
+     * Fetches a committed transaction by its hash.
+     *
+     * @param hash the transaction hash (hex-encoded with `0x` prefix)
+     * @return the transaction response
+     */
     suspend fun getTransactionByHash(hash: String): TransactionResponse = retryable {
         val response = httpClient.get("$baseUrl/transactions/by_hash/$hash")
         handleResponse(response)
         response.body()
     }
 
+    /**
+     * Fetches a committed transaction by its ledger version.
+     *
+     * @param version the ledger version number
+     * @return the transaction response
+     */
     suspend fun getTransactionByVersion(version: ULong): TransactionResponse = retryable {
         val response = httpClient.get("$baseUrl/transactions/by_version/$version")
         handleResponse(response)
         response.body()
     }
 
+    /** Blocking variant of [getTransactionByVersion] for Java interop. */
     @JvmName("getTransactionByVersionSync")
     fun getTransactionByVersionBlocking(version: ULong): TransactionResponse = runBlocking {
         getTransactionByVersion(version)
@@ -160,11 +199,19 @@ class AptosRestClient(val config: AptosConfig, engine: HttpClientEngine? = null)
         response.body()
     }
 
+    /** Blocking variant of [simulateTransaction] for Java interop. */
     @JvmName("simulateTransactionSync")
     fun simulateTransactionBlocking(signedTxn: SignedTransaction): List<SimulationResult> =
         runBlocking { simulateTransaction(signedTxn) }
 
-    /** Returns transactions sent by the given account address. */
+    /**
+     * Fetches transactions sent by the given account address.
+     *
+     * @param address the sender account address
+     * @param start optional starting sequence number for pagination
+     * @param limit optional maximum number of transactions to return
+     * @return list of transactions originating from the account
+     */
     suspend fun getAccountTransactions(
         address: AccountAddress,
         start: Long? = null,
@@ -178,6 +225,7 @@ class AptosRestClient(val config: AptosConfig, engine: HttpClientEngine? = null)
         response.body()
     }
 
+    /** Blocking variant of [getAccountTransactions] for Java interop. */
     @JvmName("getAccountTransactionsSync")
     fun getAccountTransactionsBlocking(
         address: AccountAddress,
@@ -185,7 +233,16 @@ class AptosRestClient(val config: AptosConfig, engine: HttpClientEngine? = null)
         limit: Int? = null,
     ): List<TransactionResponse> = runBlocking { getAccountTransactions(address, start, limit) }
 
-    /** Returns events for the given event handle and field. */
+    /**
+     * Fetches events from an event handle stored under an account.
+     *
+     * @param address the account address
+     * @param eventHandle the fully-qualified event handle struct type
+     * @param fieldName the event handle field name
+     * @param start optional starting sequence number for pagination
+     * @param limit optional maximum number of events to return
+     * @return list of events matching the criteria
+     */
     suspend fun getEvents(
         address: AccountAddress,
         eventHandle: String,
@@ -203,6 +260,7 @@ class AptosRestClient(val config: AptosConfig, engine: HttpClientEngine? = null)
         response.body()
     }
 
+    /** Blocking variant of [getEvents] for Java interop. */
     @JvmName("getEventsSync")
     fun getEventsBlocking(
         address: AccountAddress,
@@ -214,6 +272,11 @@ class AptosRestClient(val config: AptosConfig, engine: HttpClientEngine? = null)
 
     // --- Gas ---
 
+    /**
+     * Estimates the current gas unit price from the node.
+     *
+     * @return gas price estimate with standard, prioritized, and deprioritized values
+     */
     suspend fun estimateGasPrice(): GasEstimate = retryable {
         val response = httpClient.get("$baseUrl/estimate_gas_price")
         handleResponse(response)
@@ -222,6 +285,14 @@ class AptosRestClient(val config: AptosConfig, engine: HttpClientEngine? = null)
 
     // --- View ---
 
+    /**
+     * Executes a Move view function (read-only, no state changes).
+     *
+     * @param function the fully-qualified function name (e.g. `"0x1::coin::balance"`)
+     * @param typeArguments Move type arguments for the function
+     * @param arguments function arguments as JSON-encoded strings
+     * @return the view function result as a JSON array
+     */
     suspend fun view(
         function: String,
         typeArguments: List<String> = emptyList(),
@@ -250,6 +321,7 @@ class AptosRestClient(val config: AptosConfig, engine: HttpClientEngine? = null)
         return valueStr.toULong()
     }
 
+    /** Blocking variant of [getBalance] for Java interop. */
     @JvmName("getBalanceSync")
     fun getBalanceBlocking(address: AccountAddress): ULong = runBlocking { getBalance(address) }
 
@@ -273,6 +345,7 @@ class AptosRestClient(val config: AptosConfig, engine: HttpClientEngine? = null)
         }
     }
 
+    /** Closes the underlying HTTP client and releases resources. */
     fun close() {
         httpClient.close()
     }
