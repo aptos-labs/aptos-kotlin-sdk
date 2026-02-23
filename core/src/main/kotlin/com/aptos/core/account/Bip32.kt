@@ -8,12 +8,24 @@ import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
 /**
- * BIP-32 key derivation for Secp256k1.
+ * BIP-32 hierarchical deterministic key derivation for Secp256k1.
+ *
+ * Implements the [BIP-32](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki)
+ * specification for deriving Secp256k1 child keys from a master seed.
+ * Supports both hardened and normal derivation.
  */
 object Bip32 {
     private const val BITCOIN_SEED = "Bitcoin seed"
     private val curveParams = CustomNamedCurves.getByName("secp256k1")
 
+    /**
+     * Derives a 32-byte Secp256k1 private key from a seed using the given derivation path.
+     *
+     * @param seed the master seed (typically 64 bytes from BIP-39 mnemonic)
+     * @param path the derivation path (supports both hardened and normal components)
+     * @return the derived 32-byte private key
+     * @throws com.aptos.core.error.MnemonicException if the derived key is invalid
+     */
     @JvmStatic
     fun deriveSecp256k1(seed: ByteArray, path: DerivationPath): ByteArray {
         val (key, chainCode) = masterKey(seed)

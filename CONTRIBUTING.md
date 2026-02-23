@@ -84,12 +84,14 @@ Tests use **JUnit 5** with **kotest** assertions and **MockK** for mocking.
 | `:core` | Types, crypto, BCS, accounts, transactions | No |
 | `:client` | REST API client, faucet, config | Yes |
 | `:sdk` | High-level `Aptos` facade | Yes (via `:client`) |
+| `:indexer` | GraphQL indexer client (opt-in) | Yes |
 
 **Dependency rules:**
 
 - `:core` must **never** depend on `:client` or `:sdk`
 - `:client` depends on `:core`
 - `:sdk` depends on `:client` (which transitively includes `:core`)
+- `:indexer` depends on `:core` only (no `:client` or `:sdk` dependency)
 
 When adding new functionality, place it in the lowest appropriate module.
 

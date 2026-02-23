@@ -1,5 +1,11 @@
 package com.aptos.core.error
 
+/**
+ * Maps on-chain Move VM abort codes to human-readable categories.
+ *
+ * The Aptos Move framework uses numeric category codes (1--12) in abort errors.
+ * Use [fromCode] to convert an abort code to its corresponding category.
+ */
 enum class ErrorCategory(val code: Int, val description: String) {
     INVALID_INPUT(1, "Invalid argument provided"),
     OUT_OF_RANGE(2, "Value out of valid range"),
@@ -16,6 +22,12 @@ enum class ErrorCategory(val code: Int, val description: String) {
     ;
 
     companion object {
+        /**
+         * Returns the [ErrorCategory] for the given numeric abort code, or `null` if unknown.
+         *
+         * @param code the numeric abort category code (1--12)
+         * @return the matching category, or `null`
+         */
         @JvmStatic
         fun fromCode(code: Int): ErrorCategory? = entries.find { it.code == code }
     }

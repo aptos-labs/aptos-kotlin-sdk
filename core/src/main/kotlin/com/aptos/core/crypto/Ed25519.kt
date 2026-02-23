@@ -16,8 +16,13 @@ import java.security.SecureRandom
  * via Bouncy Castle. All keys and signatures are represented as byte arrays.
  */
 object Ed25519 {
+    /** Length of an Ed25519 private key in bytes. */
     const val PRIVATE_KEY_LENGTH = 32
+
+    /** Length of an Ed25519 public key in bytes. */
     const val PUBLIC_KEY_LENGTH = 32
+
+    /** Length of an Ed25519 signature in bytes. */
     const val SIGNATURE_LENGTH = 64
 
     /**
@@ -64,6 +69,7 @@ object Ed25519 {
         override fun toString(): String = "Ed25519PrivateKey(***)"
 
         companion object {
+            /** Generates a new random Ed25519 private key using [SecureRandom]. */
             @JvmStatic
             fun generate(): PrivateKey {
                 val random = SecureRandom()
@@ -71,9 +77,15 @@ object Ed25519 {
                 return PrivateKey(params.encoded)
             }
 
+            /** Parses an Ed25519 private key from a hex-encoded string (with or without `0x` prefix). */
             @JvmStatic
             fun fromHex(hex: String): PrivateKey = PrivateKey(HexString.decode(hex))
 
+            /**
+             * Derives an Ed25519 private key from a seed by taking the first 32 bytes.
+             *
+             * @param seed a byte array of at least 32 bytes (e.g. from SLIP-0010 derivation)
+             */
             @JvmStatic
             fun fromSeed(seed: ByteArray): PrivateKey {
                 require(seed.size >= PRIVATE_KEY_LENGTH) {
@@ -115,6 +127,7 @@ object Ed25519 {
             throw CryptoException("Ed25519 verification failed", e)
         }
 
+        /** Returns the hex-encoded public key with `0x` prefix. */
         fun toHex(): String = HexString.encodeWithPrefix(data)
 
         override fun equals(other: Any?): Boolean {
@@ -128,6 +141,7 @@ object Ed25519 {
         override fun toString(): String = "Ed25519PublicKey(${toHex()})"
 
         companion object {
+            /** Parses an Ed25519 public key from a hex-encoded string (with or without `0x` prefix). */
             @JvmStatic
             fun fromHex(hex: String): PublicKey = PublicKey(HexString.decode(hex))
         }
@@ -149,6 +163,7 @@ object Ed25519 {
             serializer.serializeBytes(data)
         }
 
+        /** Returns the hex-encoded signature with `0x` prefix. */
         fun toHex(): String = HexString.encodeWithPrefix(data)
 
         override fun equals(other: Any?): Boolean {
@@ -162,6 +177,7 @@ object Ed25519 {
         override fun toString(): String = "Ed25519Signature(${toHex()})"
 
         companion object {
+            /** Parses an Ed25519 signature from a hex-encoded string (with or without `0x` prefix). */
             @JvmStatic
             fun fromHex(hex: String): Signature = Signature(HexString.decode(hex))
         }

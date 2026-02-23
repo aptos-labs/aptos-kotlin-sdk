@@ -43,6 +43,11 @@ class AptosIndexerClient(val config: IndexerConfig, engine: HttpClientEngine? = 
 
     /**
      * Executes a raw GraphQL query and returns the response body as a string.
+     *
+     * @param graphqlQuery the GraphQL query string
+     * @param variables optional variables for the query as a JSON object
+     * @return the raw response body as a string
+     * @throws ApiException if the indexer returns an HTTP error
      */
     suspend fun query(graphqlQuery: String, variables: JsonObject? = null): String {
         val request = GraphQLRequest(query = graphqlQuery, variables = variables)
@@ -59,7 +64,14 @@ class AptosIndexerClient(val config: IndexerConfig, engine: HttpClientEngine? = 
         return response.bodyAsText()
     }
 
-    /** Fetches tokens owned by the given address. */
+    /**
+     * Fetches tokens owned by the given address.
+     *
+     * @param ownerAddress the account address that owns the tokens
+     * @param offset optional pagination offset
+     * @param limit optional maximum number of results
+     * @return list of tokens owned by the account
+     */
     suspend fun getAccountTokens(ownerAddress: String, offset: Int? = null, limit: Int? = null): List<Token> {
         val variables = buildJsonObject {
             put("owner_address", ownerAddress)
@@ -72,7 +84,14 @@ class AptosIndexerClient(val config: IndexerConfig, engine: HttpClientEngine? = 
         return response.data?.tokens ?: emptyList()
     }
 
-    /** Fetches NFT collections, optionally filtered by creator address. */
+    /**
+     * Fetches NFT collections, optionally filtered by creator address.
+     *
+     * @param creatorAddress optional creator address to filter by
+     * @param offset optional pagination offset
+     * @param limit optional maximum number of results
+     * @return list of collections
+     */
     suspend fun getCollections(
         creatorAddress: String? = null,
         offset: Int? = null,
@@ -89,7 +108,14 @@ class AptosIndexerClient(val config: IndexerConfig, engine: HttpClientEngine? = 
         return response.data?.collections ?: emptyList()
     }
 
-    /** Fetches user transactions with payload data for the given sender. */
+    /**
+     * Fetches user transactions with payload data for the given sender.
+     *
+     * @param sender the sender address
+     * @param offset optional pagination offset
+     * @param limit optional maximum number of results
+     * @return list of indexed transactions with payload data
+     */
     suspend fun getAccountTransactionsWithPayload(
         sender: String,
         offset: Int? = null,
@@ -106,7 +132,15 @@ class AptosIndexerClient(val config: IndexerConfig, engine: HttpClientEngine? = 
         return response.data?.transactions ?: emptyList()
     }
 
-    /** Fetches events, optionally filtered by account address and event type. */
+    /**
+     * Fetches events, optionally filtered by account address and event type.
+     *
+     * @param accountAddress optional account address to filter events by
+     * @param type optional event type to filter by
+     * @param offset optional pagination offset
+     * @param limit optional maximum number of results
+     * @return list of indexed events
+     */
     suspend fun getEvents(
         accountAddress: String? = null,
         type: String? = null,
@@ -132,6 +166,7 @@ class AptosIndexerClient(val config: IndexerConfig, engine: HttpClientEngine? = 
         }
     }
 
+    /** Closes the underlying HTTP client and releases resources. */
     fun close() {
         httpClient.close()
     }

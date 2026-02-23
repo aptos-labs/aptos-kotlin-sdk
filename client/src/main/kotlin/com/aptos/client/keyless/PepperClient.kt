@@ -65,6 +65,7 @@ class PepperClient(
         return HexString.decode(result.pepper)
     }
 
+    /** Closes the underlying HTTP client and releases resources. */
     fun close() {
         httpClient.close()
     }

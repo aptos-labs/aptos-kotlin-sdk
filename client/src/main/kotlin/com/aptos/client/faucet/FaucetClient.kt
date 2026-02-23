@@ -56,10 +56,12 @@ class FaucetClient(val config: AptosConfig, engine: HttpClientEngine? = null) {
         }
     }
 
+    /** Blocking variant of [fundAccount] for Java interop. */
     @JvmName("fundAccountSync")
     fun fundAccountBlocking(address: AccountAddress, amount: ULong = 100_000_000uL) =
         runBlocking { fundAccount(address, amount) }
 
+    /** Closes the underlying HTTP client and releases resources. */
     fun close() {
         httpClient.close()
     }
