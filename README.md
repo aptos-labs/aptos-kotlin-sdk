@@ -359,8 +359,45 @@ public class Example {
 | `:core` | `com.aptos:aptos-core` | `com.aptos.core.*` | Types (`AccountAddress`, `TypeTag`, `StructTag`, `ChainId`), BCS serialization/deserialization, Ed25519/Secp256k1 cryptography, account management, BIP-39 mnemonics, transaction building and signing |
 | `:client` | `com.aptos:aptos-client` | `com.aptos.client.*` | Coroutine-based REST API client (`AptosRestClient`), faucet client (`FaucetClient`), network configuration (`AptosConfig`), retry policy with exponential backoff |
 | `:sdk` | `com.aptos:aptos-kotlin-sdk` | `com.aptos.sdk.*` | High-level `Aptos` facade composing REST client, faucet, and transaction utilities into a single entry point with convenience methods like `transfer` |
+| `:indexer` | `com.aptos:aptos-indexer` | `com.aptos.indexer.*` | GraphQL client for the Aptos Indexer API — queries for tokens, collections, transactions, and events (opt-in, not bundled in `:sdk`) |
 
-Dependency graph: `:sdk` depends on `:client`, which depends on `:core`.
+Dependency graph: `:sdk` depends on `:client`, which depends on `:core`. The `:indexer` module depends on `:core` only and is added separately.
+
+### Indexer (GraphQL)
+
+The `:indexer` module provides a GraphQL client for querying the Aptos Indexer API. Add it as a separate dependency:
+
+```kotlin
+dependencies {
+    implementation("com.aptos:aptos-indexer:0.1.0")
+}
+```
+
+Query tokens, collections, transactions, and events:
+
+```kotlin
+import com.aptos.indexer.AptosIndexerClient
+import com.aptos.indexer.IndexerConfig
+
+val indexer = AptosIndexerClient(IndexerConfig.testnet())
+
+// Fetch tokens owned by an account
+val tokens = indexer.getAccountTokens("0x1")
+
+// Fetch NFT collections
+val collections = indexer.getCollections(creatorAddress = "0x1")
+
+// Fetch account transactions with payload data
+val txns = indexer.getAccountTransactionsWithPayload(sender = "0x1")
+
+// Fetch events
+val events = indexer.getEvents(accountAddress = "0x1")
+
+// Custom GraphQL query
+val rawResult = indexer.query("{ ledger_infos { chain_id } }")
+
+indexer.close()
+```
 
 ## Configuration
 
