@@ -9,6 +9,7 @@ plugins {
     alias(libs.plugins.detekt)
     alias(libs.plugins.spotless)
     alias(libs.plugins.kover)
+    alias(libs.plugins.nexus.publish)
 }
 
 allprojects {
@@ -18,6 +19,17 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+    }
+}
+
+nexusPublishing {
+    repositories {
+        sonatype {
+            nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
+            snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
+            username.set(findProperty("ossrhUsername")?.toString() ?: System.getenv("OSSRH_USERNAME") ?: "")
+            password.set(findProperty("ossrhPassword")?.toString() ?: System.getenv("OSSRH_PASSWORD") ?: "")
+        }
     }
 }
 
@@ -96,26 +108,6 @@ subprojects {
                 "indexer" -> "GraphQL indexer client for the Aptos blockchain"
                 else -> ""
             }
-
-        configure<PublishingExtension> {
-            repositories {
-                maven {
-                    name = "sonatype"
-                    url =
-                        if (version.toString().endsWith("SNAPSHOT")) {
-                            uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
-                        } else {
-                            uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
-                        }
-                    credentials {
-                        username = findProperty("ossrhUsername")?.toString()
-                            ?: System.getenv("OSSRH_USERNAME") ?: ""
-                        password = findProperty("ossrhPassword")?.toString()
-                            ?: System.getenv("OSSRH_PASSWORD") ?: ""
-                    }
-                }
-            }
-        }
 
         pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
             the<JavaPluginExtension>().apply {
