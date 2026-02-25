@@ -23,6 +23,7 @@ androidx-security = "1.1.0-alpha06"
 core-ktx = "1.15.0"
 datastore = "1.1.1"
 turbine = "1.2.0"
+nexus-publish = "2.0.0"
 
 [libraries]
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
@@ -78,3 +79,4 @@ detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 jmh = { id = "me.champeau.jmh", version.ref = "jmh" }
+nexus-publish = { id = "io.github.gradle-nexus.publish-plugin", version.ref = "nexus-publish" }
